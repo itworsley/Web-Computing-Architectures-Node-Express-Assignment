@@ -43,23 +43,34 @@ exports.createUser = async function (req, res) {
     const sqlCommand = String(req.body);
     const user_data = {"username": req.body.username, "email": req.body.email, "given_name": req.body.givenName,
         "family_name": req.body.familyName, "password": req.body.password};
-    const user = user_data["username"].toString();
+    const username = user_data["username"].toString();
     const email = user_data["email"].toString();
     const given_name = user_data["given_name"].toString();
     const family_name = user_data["family_name"].toString();
     const password = user_data["password"].toString();
-    const values = [[user, email, given_name, family_name, password]];
-    try {
+    const values = [[username, email, given_name, family_name, password]];
+
+    /* Checks if fields are empty or email doesn't contain an @ symbol*/
+    if (username=="" || email=="" || given_name=="" || family_name=="" || password=="" || !email.includes("@")) {
+        res.statusMessage = 'Bad Request';
+        res.status(400)
+            .send();
+    } else {
         const results = await User.createUser(values, sqlCommand);
         res.statusMessage = 'Created';
         res.status(201)
             .json(results);
+    }
+    /**
+    try {
+
     } catch (err) {
         if (!err.hasBeenLogged) console.error(err);
         res.statusMessage = 'Bad Request';
         res.status(400)
             .send();
     }
+     */
 };
 
 /**
