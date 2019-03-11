@@ -22,7 +22,7 @@ exports.getSingleUser = async function(userId) {
 exports.createUser = async function (username) {
     let values = [username];
     try {
-        return await db.getPool().query('INSERT INTO User (username) VALUES ?', values)
+        return await db.getPool().query('INSERT INTO User (username, email, given_name, family_name, password) VALUES ?', values)
     } catch (err) {
         console.log(err);
         return (err);
