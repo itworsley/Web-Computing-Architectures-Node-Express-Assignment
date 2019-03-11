@@ -18,17 +18,25 @@ exports.getAllUsers = async function (req, res) {
 exports.getSingleUser = async function (req, res) {
     const sqlCommand = String(req.body);
     const id = req.params.userId;
-    try {
-        const results = await User.getSingleUser(id, sqlCommand);
+    const results = await User.getSingleUser(id, sqlCommand);
+    if (results.length > 0) {
         res.statusMessage = 'OK';
         res.status(200)
             .json(results);
-    } catch (err) {
-        if (!err.hasBeenLogged) console.error(err);
-        res.statusMessage = 'Internal Server Error';
-        res.status(500)
+    } else if (results.length == 0) {
+        res.statusMessage = 'Not Found';
+        res.status(404)
             .send();
     }
+
+    /**
+    } catch (err) {
+        if (err instanceof HttpError) console.error(err);
+        res.statusMessage = 'Not Found';
+        res.status(404)
+            .send();
+    }
+     */
 };
 
 exports.createUser = async function (req, res) {
