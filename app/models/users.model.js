@@ -41,3 +41,7 @@ exports.updateUser = async function (id, values) {
         return (err);
     }
 }*/
+
+exports.login = async function (username) {
+
+}

@@ -9,5 +9,8 @@ module.exports = function (app) {
         .get(users.getSingleUser)
         //.patch(users.updateUser);
         //.delete(users.delete);
+
+    app.route(app.rootUrl + '/users/login')
+        .get(users.login);
 }
 

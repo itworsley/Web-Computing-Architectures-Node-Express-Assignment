@@ -29,48 +29,39 @@ exports.getSingleUser = async function (req, res) {
             .send();
     }
 
-    /**
-    } catch (err) {
-        if (err instanceof HttpError) console.error(err);
-        res.statusMessage = 'Not Found';
-        res.status(404)
-            .send();
-    }
-     */
 };
 
 exports.createUser = async function (req, res) {
     const sqlCommand = String(req.body);
-    const user_data = {"username": req.body.username, "email": req.body.email, "given_name": req.body.givenName,
-        "family_name": req.body.familyName, "password": req.body.password};
-    const username = user_data["username"].toString();
-    const email = user_data["email"].toString();
-    const given_name = user_data["given_name"].toString();
-    const family_name = user_data["family_name"].toString();
-    const password = user_data["password"].toString();
-    const values = [[username, email, given_name, family_name, password]];
+    if (req.body.username && req.body.email && req.body.givenName && req.body.familyName && req.body.password) {
+        const user_data = {
+            "username": req.body.username, "email": req.body.email, "given_name": req.body.givenName,
+            "family_name": req.body.familyName, "password": req.body.password
+        };
+        const username = user_data["username"].toString();
+        const email = user_data["email"].toString();
+        const given_name = user_data["given_name"].toString();
+        const family_name = user_data["family_name"].toString();
+        const password = user_data["password"].toString();
+        const values = [[username, email, given_name, family_name, password]];
 
-    /* Checks if fields are empty or email doesn't contain an @ symbol*/
-    if (username=="" || email=="" || given_name=="" || family_name=="" || password=="" || !email.includes("@")) {
-        res.statusMessage = 'Bad Request';
-        res.status(400)
-            .send();
+        /* Checks if password is empty or email doesn't contain an @ symbol*/
+        if (password == "" || !email.includes("@")) {
+            res.statusMessage = 'Bad Request';
+            res.status(400)
+                .send();
+        } else {
+            const results = await User.createUser(values, sqlCommand);
+            res.statusMessage = 'Created';
+            const json_result = ('"userId": "' + results.insertId + '"');
+            res.status(201)
+                .json(json_result);
+        }
     } else {
-        const results = await User.createUser(values, sqlCommand);
-        res.statusMessage = 'Created';
-        res.status(201)
-            .json(results);
-    }
-    /**
-    try {
-
-    } catch (err) {
-        if (!err.hasBeenLogged) console.error(err);
         res.statusMessage = 'Bad Request';
         res.status(400)
             .send();
     }
-     */
 };
 
 /**
@@ -91,3 +82,7 @@ exports.updateUser = async function (req, res) {
     }
 }
  */
+
+exports.login = async function (req, res) {
+    console.log("Trying to log in!");
+}

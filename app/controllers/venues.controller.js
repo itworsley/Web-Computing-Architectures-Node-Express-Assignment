@@ -15,18 +15,23 @@ exports.getAllVenues = async function (req, res) {
     }
 };
 
+/**
+ * Get all details of a single venue
+ * @param req
+ * @param res
+ * @returns {Promise<void>}
+ */
 exports.getSingleVenue = async function (req, res) {
     const sqlCommand = String(req.body);
     const id = req.params.venueId;
-    try {
-        const results = await Venue.getSingleVenue(id, sqlCommand);
+    const results = await Venue.getSingleVenue(id, sqlCommand);
+    if (results.length > 0) {
         res.statusMessage = 'OK';
         res.status(200)
             .json(results);
-    } catch (err) {
-        if (!err.hasBeenLogged) console.error(err);
-        res.statusMessage = 'Internal Server Error';
-        res.status(500)
+    } else if (results.length == 0) {
+        res.statusMessage = 'Not Found';
+        res.status(404)
             .send();
     }
 };
