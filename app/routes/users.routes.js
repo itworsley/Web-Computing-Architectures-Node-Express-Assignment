@@ -11,6 +11,6 @@ module.exports = function (app) {
         //.delete(users.delete);
 
     app.route(app.rootUrl + '/users/login')
-        .post(users.login);
+        //.post(users.login);
 }
 

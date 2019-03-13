@@ -98,7 +98,6 @@ exports.createVenue = async function (req, res) {
 
         }
     } else {
-        console.log("HERE!");
         res.statusMessage = 'Bad Request';
         res.status(400)
             .send();

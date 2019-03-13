@@ -93,6 +93,8 @@ exports.updateUser = async function (req, res) {
 }
  */
 
+/**
+
 exports.login = async function (req, res) {
     // Check if password is given in query
     if (!req.query["password"]) {
@@ -119,3 +121,4 @@ exports.login = async function (req, res) {
         res.status(200)
             .json(jsonResult);
 }
+ */

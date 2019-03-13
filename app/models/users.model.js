@@ -55,6 +55,8 @@ exports.updateUser = async function (id, values) {
     }
 }*/
 
+/**
+
 exports.loginUser = async function (field, value, password, done) {
     let token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
     console.log(token);
@@ -82,3 +84,4 @@ exports.loginUser = async function (field, value, password, done) {
         });
     });
 }
+ */
