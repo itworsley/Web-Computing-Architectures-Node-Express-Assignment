@@ -21,7 +21,7 @@ exports.getAllUsers = async function () {
  */
 exports.getSingleUser = async function(userId, token, done) {
     help.getUserIdFromToken(token, function(currentUser) {
-        //Checks if user is authorised to see account
+        //Checks if user is logged in
         help.checkAuthenticated(currentUser, function (isAuthorised) {
             if (!isAuthorised) {
                 return done(401, "Unauthorized", "Unauthorized");
@@ -32,7 +32,7 @@ exports.getSingleUser = async function(userId, token, done) {
             } else {
                 fields = "username as username, given_name as givenName, family_name as familyName";
             }
-            const sql = `SELECT ${fields} FROM User WHERE user_id = "${givenId}"`;
+            const sql = `SELECT ${fields} FROM User WHERE user_id = "${userId}"`;
             db.getPool().query(sql, function(err, result) {
                 if (err) return done(500, "Internal server error", "Internal server error");
                 if (result.length === 0) done(404, "Not Found", "Not Found");

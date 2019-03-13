@@ -17,19 +17,12 @@ exports.getAllUsers = async function (req, res) {
 };
 
 exports.getSingleUser = async function (req, res) {
-    const sqlCommand = String(req.body);
     const id = req.params.userId;
-    const results = await User.getSingleUser(id, sqlCommand);
-    if (results.length > 0) {
-        res.statusMessage = 'OK';
-        res.status(200)
-            .json(results);
-    } else if (results.length == 0) {
-        res.statusMessage = 'Not Found';
-        res.status(404)
-            .send();
-    }
-
+    const token = req.header("X-Authorization");
+    User.getSingleUser(id, token, function(statusCode, statusMessage, result) {
+        res.statusMessage = statusMessage;
+        res.status(statusCode).json(result);
+    });
 };
 
 exports.createUser = async function (req, res) {
