@@ -38,9 +38,8 @@ exports.checkUserExists = async function (user) {
     } else {
         return (false)
     }
+};
 
-
-}
 
 /**
 exports.updateUser = async function (id, values) {

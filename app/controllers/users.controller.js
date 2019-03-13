@@ -34,7 +34,7 @@ exports.getSingleUser = async function (req, res) {
 
 exports.createUser = async function (req, res) {
     const sqlCommand = String(req.body);
-    if (req.body.username && req.body.email && req.body.givenName && req.body.familyName && req.body.password) {
+    if (req.body.username && req.body.email && req.body.givenName && req.body.familyName && req.body.password && req.body.email) {
         const user_data = {
             "username": req.body.username, "email": req.body.email, "given_name": req.body.givenName,
             "family_name": req.body.familyName, "password": req.body.password
@@ -61,7 +61,7 @@ exports.createUser = async function (req, res) {
             } else {
                 const results = await User.createUser(values, sqlCommand);
                 res.statusMessage = 'Created';
-                const json_result = {"userId": results.insertId.toString()};
+                const json_result = {"userId": results.insertId};
                 res.status(201)
                     .json(json_result);
             }
