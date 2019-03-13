@@ -11,13 +11,35 @@ exports.getAllUsers = async function () {
 
 };
 
-exports.getSingleUser = async function(userId) {
-    try {
-        return await db.getPool().query("SELECT * FROM User WHERE user_id = ?", userId);
-    } catch (err) {
-        console.log(err);
-        return(err);
-    }
+/**
+ * Checks if user is authorised to see account. If they are, will show username, given name, family name and email.
+ * If user is not authorised will not show email.
+ * @param userId
+ * @param token
+ * @param done
+ * @returns {Promise<*>}
+ */
+exports.getSingleUser = async function(userId, token, done) {
+    help.getUserIdFromToken(token, function(currentUser) {
+        //Checks if user is authorised to see account
+        help.checkAuthenticated(currentUser, function (isAuthorised) {
+            if (!isAuthorised) {
+                return done(401, "Unauthorized", "Unauthorized");
+            }
+            let fields = '';
+            if (userId == currentUser) {
+                fields = "username as username, given_name as givenName, family_name as familyName, email as email";
+            } else {
+                fields = "username as username, given_name as givenName, family_name as familyName";
+            }
+            const sql = `SELECT ${fields} FROM User WHERE user_id = "${givenId}"`;
+            db.getPool().query(sql, function(err, result) {
+                if (err) return done(500, "Internal server error", "Internal server error");
+                if (result.length === 0) done(404, "Not Found", "Not Found");
+                done(200, "OK", result[0]);
+            });
+        });
+    });
 };
 
 exports.createUser = async function (user) {
@@ -54,28 +76,23 @@ exports.updateUser = async function (id, values) {
     }
 }*/
 
-/**
-
 exports.loginUser = async function (field, value, password, done) {
     let token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
-    console.log(token);
 
     // Check for valid credentials
-
     const checkSQL = `SELECT password FROM User WHERE ${field} = "${value}"`
-
     db.getPool().query(checkSQL, function(err, res) {
         if (err) return done(500, "Internal Server Error", "Internal Server Error");
         if (res.length === 0)  return done(400, "Bad Request", "Bad Request");
-        let givenPassword = res[0].user_password;
+        let givenPassword = res[0].password;
         if (!(givenPassword === password)) return done(400, "Bad Request", "Bad Request");
-        const sql = `UPDATE User SET user_token = "${token}" WHERE ${field} = "${value}" AND password = "${password}"`;
+        const sql = `UPDATE User SET auth_token = "${token}" WHERE ${field} = "${value}" AND password = "${password}"`;
         db.getPool().query(sql, function(err, res) {
             if (res.affectedRows === 0) return done(400, "Bad Request", "Bad Request");
             if (err) return done(500, "Internal Server Error", "Internal Server Error");
             help.getUserIdFromToken(token, function (userId) {
                 if (userId) {
-                    return done(200, "OK", {"id": userId, "token": token});
+                    return done(200, "OK", {"userId": userId, "token": token});
                 } else {
                     return done(500, "Internal Server Error", "Internal Server Error");
                 }
@@ -83,4 +100,18 @@ exports.loginUser = async function (field, value, password, done) {
         });
     });
 }
- */
+
+exports.logoutUser = function(token, done) {
+    help.getUserIdFromToken(token, function(user) {
+        help.checkAuthenticated(user, function(isAuthorised){
+            if (!isAuthorised) {
+                return done(401, "Unauthorized");
+            }
+            const sql = `UPDATE User SET auth_token = NULL WHERE user_id = "${user}"`;
+            db.getPool().query(sql, function(err) {
+                if (err) return done(500, "Internal server error");
+                return done(200, "OK");
+            });
+        });
+    });
+};

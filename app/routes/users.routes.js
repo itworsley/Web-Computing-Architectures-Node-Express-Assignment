@@ -10,6 +10,8 @@ module.exports = function (app) {
         //.patch(users.updateUser);
         //.delete(users.delete);
     app.route(app.rootUrl + '/users/login')
-        //.post(users.login);
+        .post(users.login);
+    app.route(app.rootUrl + '/users/logout')
+        .post(users.logout);
 }
 

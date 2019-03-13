@@ -34,7 +34,7 @@ exports.getSingleUser = async function (req, res) {
 
 exports.createUser = async function (req, res) {
     const sqlCommand = String(req.body);
-    if (req.body.username && req.body.email && req.body.givenName && req.body.familyName && req.body.password && req.body.email) {
+    if (req.body.username && req.body.email && req.body.givenName && req.body.familyName && req.body.password) {
         const user_data = {
             "username": req.body.username, "email": req.body.email, "given_name": req.body.givenName,
             "family_name": req.body.familyName, "password": req.body.password
@@ -93,32 +93,35 @@ exports.updateUser = async function (req, res) {
 }
  */
 
-/**
 
 exports.login = async function (req, res) {
     // Check if password is given in query
-    if (!req.query["password"]) {
+    if (!req.body["password"]) {
         res.statusMessage = "Bad Request";
-        res.status(400)
-            .send();
+        return res.status(400).send();
     }
-    console.log(req.query);
     let field = '';
     let value = '';
-    if (req.query['username']) {
-        field = "user_username";
-        value = req.query['username'];
-    } else if (req.query['email']) {
-        field = "user_email";
-        value = req.query['email'];
+    if (req.body['username']) {
+        field = "username";
+        value = req.body['username'];
+    } else if (req.body['email']) {
+        field = "email";
+        value = req.body['email'];
     } else {
         res.statusMessage = "Bad Request";
-        res.status(400)
-            .send();
+        return res.status(400).send();
     }
-    const jsonResult = await User.loginUser(field, value, req.query['password'])
-        res.statusMessage = "OK";
-        res.status(200)
-            .json(jsonResult);
+    User.loginUser(field, value, req.body['password'], function(statusCode, statusMessage, result) {
+        res.statusMessage = statusMessage;
+        res.status(statusCode).json(result);
+    })
 }
- */
+
+exports.logout = function(req, res) {
+    let token = req.header("X-Authorization");
+    User.logoutUser(token, function(statusCode, statusMessage) {
+        res.statusMessage = statusMessage;
+        res.status(statusCode).send(statusMessage);
+    });
+};
