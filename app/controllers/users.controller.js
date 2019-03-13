@@ -1,4 +1,5 @@
 const User = require('../models/users.model');
+const db = require('../../config/db');
 
 exports.getAllUsers = async function (req, res) {
     const sqlCommand = String(req.body);
@@ -51,11 +52,20 @@ exports.createUser = async function (req, res) {
             res.status(400)
                 .send();
         } else {
-            const results = await User.createUser(values, sqlCommand);
-            res.statusMessage = 'Created';
-            const json_result = ('"userId": "' + results.insertId + '"');
-            res.status(201)
-                .json(json_result);
+            // Check if duplicate user
+            const result = await db.getPool().query('SELECT * FROM User WHERE username = ?', req.body.username);
+            if (result.length != 0) {
+                res.statusMessage = 'Bad Request';
+                res.status(400)
+                    .send();
+            } else {
+                const results = await User.createUser(values, sqlCommand);
+                res.statusMessage = 'Created';
+                const json_result = {"userId": results.insertId.toString()};
+                res.status(201)
+                    .json(json_result);
+            }
+
         }
     } else {
         res.statusMessage = 'Bad Request';
@@ -84,5 +94,28 @@ exports.updateUser = async function (req, res) {
  */
 
 exports.login = async function (req, res) {
-    console.log("Trying to log in!");
+    // Check if password is given in query
+    if (!req.query["password"]) {
+        res.statusMessage = "Bad Request";
+        res.status(400)
+            .send();
+    }
+    console.log(req.query);
+    let field = '';
+    let value = '';
+    if (req.query['username']) {
+        field = "user_username";
+        value = req.query['username'];
+    } else if (req.query['email']) {
+        field = "user_email";
+        value = req.query['email'];
+    } else {
+        res.statusMessage = "Bad Request";
+        res.status(400)
+            .send();
+    }
+    const jsonResult = await User.loginUser(field, value, req.query['password'])
+        res.statusMessage = "OK";
+        res.status(200)
+            .json(jsonResult);
 }
