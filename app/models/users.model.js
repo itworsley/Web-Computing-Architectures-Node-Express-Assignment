@@ -28,8 +28,10 @@ exports.getSingleUser = async function(userId, token, done) {
             }
             let fields = '';
             if (userId == currentUser) {
-                fields = "username as username, given_name as givenName, family_name as familyName, email as email";
+                console.log("HERE!");
+                fields = "username as username, given_name as givenName, family_name as familyName, email";
             } else {
+                console.log("HERE!!!");
                 fields = "username as username, given_name as givenName, family_name as familyName";
             }
             const sql = `SELECT ${fields} FROM User WHERE user_id = "${userId}"`;

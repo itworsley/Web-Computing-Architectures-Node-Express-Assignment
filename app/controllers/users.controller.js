@@ -33,7 +33,7 @@ exports.createUser = async function (req, res) {
             "family_name": req.body.familyName, "password": req.body.password
         };
         const username = user_data["username"].toString();
-        const email = user_data["email"].toString();
+        const email = user_data["email"];
         const given_name = user_data["given_name"].toString();
         const family_name = user_data["family_name"].toString();
         const password = user_data["password"].toString();
