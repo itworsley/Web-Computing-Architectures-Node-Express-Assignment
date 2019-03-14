@@ -67,24 +67,20 @@ exports.createUser = async function (req, res) {
     }
 };
 
-/**
 exports.updateUser = async function (req, res) {
-    const sqlCommand = String(req.body);
-    const values = req.body.toString();
-    const id = req.params.userId;
-    try {
-        const results = await User.updateUser(id, values, sqlCommand);
-        res.statusMessage = 'OK';
-        res.status(200)
-            .json(results);
-    } catch (err) {
-        if (!err.hasBeenLogged) console.error(err);
-        res.statusMessage = 'Internal Server Error';
-        res.status(500)
-            .send();
+   const length = Object.keys(req.body).length;
+    if (length === 0) {
+        res.statusMessage = "Bad Request"
+        return res.status(400).send();
     }
-}
- */
+    const id = req.params.userId;
+    let token = req.header("X-Authorization");
+    User.updateUser(token, id, req.body, function(statusCode, statusMessage) {
+        res.statusMessage = statusMessage;
+        res.status(statusCode).json(statusMessage);
+    });
+};
+
 
 
 exports.login = async function (req, res) {

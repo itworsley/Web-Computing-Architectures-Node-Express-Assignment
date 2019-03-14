@@ -70,18 +70,68 @@ exports.checkUserExists = async function (user) {
 };
 
 
-/**
-exports.updateUser = async function (id, values) {
-    let valuesList = ["given_name= 'Teddy'"];
-    console.log(valuesList);
-    console.log(id);
-    try {
-        return await db.getPool().query('UPDATE Users SET (?) WHERE user_id = ?', valuesList, id);
-    } catch (err) {
-        console.log(err);
-        return (err);
-    }
-}*/
+exports.updateUser = async function (token, givenId, userValues, done) {
+    help.getUserIdFromToken(token, function(currentUser) {
+        help.checkAuthenticated(currentUser, function(isAuthorised) {
+            //If current user is authorised to edit user.
+            if(!isAuthorised) {
+                return done(401, "Unauthorized");
+            }
+            if(!(currentUser == givenId)) {
+                return done(403, "Forbidden");
+            }
+            let values = '';
+            let isEmpty = true;
+            if (userValues['username']) {
+                if (!isEmpty) {
+                    values = values + ", ";
+                }
+                values = values + `username = "${userValues.username}"`;
+                isEmpty = false;
+            }
+            if (userValues['givenName']) {
+                if (!isEmpty) {
+                    values = values + ", ";
+                }
+                values = values + `given_name = "${userValues.givenName}"`;
+                isEmpty = false;
+            }
+            if (userValues['familyName']) {
+                if (!isEmpty) {
+                    values = values + ", ";
+                }
+                values = values + `family_name = "${userValues.familyName}"`;
+                isEmpty = false;
+
+            }
+            if (userValues['email']) {
+                //Check the email contains a '@' character
+                if (!userValues['email'].includes("@")) {
+                    return done(400, "Bad Request");
+                }
+                if (!isEmpty) {
+                    values = values + ", ";
+                }
+                values = values + `email = "${userValues.email}"`;
+                isEmpty = false;
+
+            }
+            if (userValues['password']) {
+                if (!isEmpty) {
+                    values = values + ", ";
+                }
+                values = values + `password = "${userValues.password}"`;
+            }
+            const sql = `UPDATE User SET ${values} WHERE user_id = ${givenId}`;
+            console.log(sql);
+            db.getPool().query(sql, function(err, result) {
+                if (err) return done(500, "Internal server error");
+                done(200, "OK");
+            });
+        });
+    });
+};
+
 
 exports.loginUser = async function (field, value, password, done) {
     let token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
