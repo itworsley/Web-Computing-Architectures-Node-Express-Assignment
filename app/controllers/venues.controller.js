@@ -53,55 +53,52 @@ exports.getSingleVenue = async function (req, res) {
 };
 
 exports.createVenue = async function (req, res) {
-    const sqlCommand = String(req.body);
-    //console.log(req.body.venueName);
-    //for (const item in req.body) {
-    //    console.log(item);
-    //}
-    if (req.body.venueName && req.body.categoryId /*&& req.body.city && req.body.shortDescription && req.body.longDescription && req.body.address && req.body.latitude && req.body.longitude*/) {
-        const venue_data = {
-            "venue_name": req.body.venueName, "category_id": req.body.categoryId, "city": req.body.city,
-            "short_description": req.body.shortDescription, "long_description": req.body.longDescription,
-            "address": req.body.address, "latitude": req.body.latitude, "longitude": req.body.longitude
-        };
-        const venue_name = venue_data["venue_name"].toString();
-        const category_id = venue_data["category_id"].toString();
-        const city = venue_data["city"].toString();
-        const short_description = venue_data["short_description"].toString();
-        const long_description = venue_data["long_description"].toString();
-        const address = venue_data["address"].toString();
-        const latitude = venue_data["latitude"].toString();
-        const longitude = venue_data["longitude"].toString();
-
-        const values = [[venue_name, category_id, city, short_description, long_description,address,latitude,longitude]];
-
-        /* Will be used to check if user is valid*/
-        if (true == false) {
-            res.statusMessage = 'Unauthorized';
-            res.status(401)
-                .send();
-        } else {
-            // Check if duplicate venue
-            const check = await db.getPool().query('SELECT * FROM Venue WHERE venue_name = ?', req.body.venueName);
-            console.log(check);
-            if (check.length != 0) {
-                res.statusMessage = 'Bad Request';
-                res.status(400)
-                    .send();
-            } else {
-                const results = await Venue.createVenue(values, sqlCommand);
-                res.statusMessage = 'Created';
-                const json_result = {"venueId": results.insertId.toString()};
-                res.status(201)
-                    .json(json_result);
-            }
-
-        }
-    } else {
-        res.statusMessage = 'Bad Request';
-        res.status(400)
-            .send();
+    let token = req.header("X-Authorization");
+    let length = Object.keys(req.body).length;
+    if (length === 0) {
+        res.statusMessage = "Bad Request";
+        return res.status(400).send("Bad Request");
     }
+    //Check all the valid parameters are in the body.
+    if (((req.body.venueName) && (req.body.categoryId) && (req.body.city) && (req.body.shortDescription) && (req.body.longDescription) && (req.body.address) && ((req.body.latitude) || (req.body.latitude == 0)) && ((req.body.longitude) || (req.body.longitude == 0)))) {
+        //Check latitude and longitude values are valid
+        if ((req.body.latitude < -90) || (req.body.latitude > 90) || (req.body.longitude < -180) || (req.body.longitude > 180)) {
+            res.statusMessage = "Bad Request"
+            return res.status(400).send("Bad Request");
+        }
+        const check = await db.getPool().query('SELECT * FROM Venue WHERE venue_name = ?', req.body.venueName);
+        if (!check.length == 0) {
+            res.statusMessage = "Bad Request";
+            return res.status(400).send("Bad Request");
+        }
+        Venue.createVenue(token, req.body, function (statusCode, statusMessage, userId) {
+            res.statusMessage = statusMessage;
+            res.status(statusCode).json(userId);
+        });
+    } else {
+        res.statusMessage = "Bad Request";
+        return res.status(400).send("Bad Request");
+    }
+};
+
+exports.updateVenue = function(req, res) {
+    let venueId = req.params.venueId;
+    let token = req.header("X-Authorization");
+
+    // Check the request body is not empty
+    let length = Object.keys(req.body).length;
+    if (length === 0) {
+        res.statusMessage = "Bad request";
+        return res.status(400).send();
+    }
+    if ((req.body.latitude < -90) || (req.body.latitude > 90) || (req.body.longitude < -180) || (req.body.longitude > 180)) {
+        res.statusMessage = "Bad Request"
+        return res.status(400).send("Bad Request");
+    }
+    Venue.updateVenue(token, venueId, req.body, function(statusCode, statusMessage) {
+        res.statusMessage = statusMessage;
+        res.status(statusCode).send(statusMessage);
+    });
 };
 
 exports.getCategories = async function (req, res) {

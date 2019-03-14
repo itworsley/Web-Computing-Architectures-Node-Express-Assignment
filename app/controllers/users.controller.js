@@ -68,9 +68,9 @@ exports.createUser = async function (req, res) {
 };
 
 exports.updateUser = async function (req, res) {
-   const length = Object.keys(req.body).length;
+    const length = Object.keys(req.body).length;
     if (length === 0) {
-        res.statusMessage = "Bad Request"
+        res.statusMessage = "Bad Request";
         return res.status(400).send();
     }
     const id = req.params.userId;
@@ -105,7 +105,7 @@ exports.login = async function (req, res) {
         res.statusMessage = statusMessage;
         res.status(statusCode).json(result);
     })
-}
+};
 
 exports.logout = function(req, res) {
     let token = req.header("X-Authorization");

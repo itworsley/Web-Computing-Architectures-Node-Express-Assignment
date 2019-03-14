@@ -123,7 +123,7 @@ exports.updateUser = async function (token, givenId, userValues, done) {
 
             }
             if (userValues['password']) {
-                if(!typeof(userValues['password']) == 'string') {
+                if(!typeof(userValues['password']) == 'string' || !isNaN(userValues['password'])) {
                     return done(400, "Bad Request");
                 }
                 if (!isEmpty) {
@@ -132,7 +132,6 @@ exports.updateUser = async function (token, givenId, userValues, done) {
                 values = values + `password = "${userValues.password}"`;
             }
             const sql = `UPDATE User SET ${values} WHERE user_id = ${givenId}`;
-            console.log(sql);
             db.getPool().query(sql, function(err, result) {
                 if (err) return done(500, "Internal server error");
                 done(200, "OK");
