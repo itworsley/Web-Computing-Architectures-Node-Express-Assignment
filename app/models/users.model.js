@@ -80,6 +80,12 @@ exports.updateUser = async function (token, givenId, userValues, done) {
             if(!(currentUser == givenId)) {
                 return done(403, "Forbidden");
             }
+            // Checks all fields are not empty
+            for (const value in userValues) {
+                if (userValues[value].length === 0) {
+                    return done(400, "Bad Request")
+                }
+            }
             let values = '';
             let isEmpty = true;
             if (userValues['username']) {
@@ -117,6 +123,9 @@ exports.updateUser = async function (token, givenId, userValues, done) {
 
             }
             if (userValues['password']) {
+                if(!typeof(userValues['password']) == 'string') {
+                    return done(400, "Bad Request");
+                }
                 if (!isEmpty) {
                     values = values + ", ";
                 }
