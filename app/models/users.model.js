@@ -1,6 +1,10 @@
 const db = require('../../config/db');
 const help = require('../lib/helpers');
 
+/**
+ * Gets all users within the database, function is not used anymore.
+ * @returns {Promise<*>}
+ */
 exports.getAllUsers = async function () {
     try {
         return await db.getPool().query("SELECT * FROM User");
@@ -23,16 +27,12 @@ exports.getSingleUser = async function(userId, token, done) {
     help.getUserIdFromToken(token, function(currentUser) {
         //Checks if user is logged in
         help.checkAuthenticated(currentUser, function (isAuthorised) {
-            if (!isAuthorised) {
-                return done(401, "Unauthorized", "Unauthorized");
-            }
             let fields = '';
-            if (userId == currentUser) {
-                console.log("HERE!");
-                fields = "username as username, given_name as givenName, family_name as familyName, email";
-            } else {
-                console.log("HERE!!!");
+            if (!isAuthorised) {
                 fields = "username as username, given_name as givenName, family_name as familyName";
+            }
+            if (userId == currentUser) {
+                fields = "username as username, given_name as givenName, family_name as familyName, email";
             }
             const sql = `SELECT ${fields} FROM User WHERE user_id = "${userId}"`;
             db.getPool().query(sql, function(err, result) {
@@ -44,6 +44,11 @@ exports.getSingleUser = async function(userId, token, done) {
     });
 };
 
+/**
+ * Create a new user in the database.
+ * @param user
+ * @returns {Promise<*>}
+ */
 exports.createUser = async function (user) {
     let values = [user];
     try {

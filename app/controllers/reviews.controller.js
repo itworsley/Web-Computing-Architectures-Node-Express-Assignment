@@ -1,5 +1,4 @@
 const Review = require('../models/reviews.model');
-const db = require('../../config/db');
 
 exports.getAllReviews = async function (req, res) {
     const sqlCommand = String(req.body);
@@ -30,16 +29,10 @@ exports.getAllReviews = async function (req, res) {
 };
 
 exports.getUserReviews = async function (req, res) {
-    const sqlCommand = String(req.body);
     const id = req.params.userId;
     const token = req.header("X-Authorization");
-    //const results = await Review.getUserReviews(id, sqlCommand);
     Review.getUserReviews(id, token,function(statusCode, statusMessage, result ) {
             res.statusMessage = statusMessage;
             res.status(statusCode).json(result);
-            //res.statusMessage = 'OK';
-            //res.status(200)
-                //.json(list);
     })
-
 }
