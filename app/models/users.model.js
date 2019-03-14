@@ -34,6 +34,9 @@ exports.getSingleUser = async function(userId, token, done) {
             if (userId == currentUser) {
                 fields = "username as username, given_name as givenName, family_name as familyName, email";
             }
+            if (userId != currentUser) {
+                fields = "username as username, given_name as givenName, family_name as familyName";
+            }
             const sql = `SELECT ${fields} FROM User WHERE user_id = "${userId}"`;
             db.getPool().query(sql, function(err, result) {
                 if (err) return done(500, "Internal server error", "Internal server error");
