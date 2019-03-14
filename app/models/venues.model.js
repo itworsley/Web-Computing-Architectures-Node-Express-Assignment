@@ -129,7 +129,7 @@ exports.updateVenue = function (token, venueId, venueValues, done) {
                 const sql = `UPDATE Venue SET ${values} WHERE venue_id = "${venueId}"`;
                 db.getPool().query(sql, function(err, result) {
                     if (err) return done(500, "Internal server error");
-                    done(201, "OK");
+                    done(200, "OK");
                 });
             });
         });
