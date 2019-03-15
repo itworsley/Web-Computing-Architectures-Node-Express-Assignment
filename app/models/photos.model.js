@@ -11,6 +11,7 @@ exports.addPhotoToUser = async function (token, userId, request, done) {
             if((currentUser !=userId)) {
                 return done(403, "Forbidden", "Forbidden");
             }
+
             const buffer = new Buffer.from(request.body).toString("base64");
             if (request.headers['content-type']=='image/png') {
                 fs.writeFile("app/photos/" + userId, buffer, function(err, data) {});
@@ -26,37 +27,50 @@ exports.addPhotoToUser = async function (token, userId, request, done) {
                     if (result[0].profile_photo_filename == null) {
                         const addPhotoSql = `UPDATE User SET profile_photo_filename = "${data}" WHERE user_id = ${userId}`
                         db.getPool().query(addPhotoSql, function(err, result) {
-                            if (err) return done(500, "Internal server error");
+                            if (err) return done(404, "Not Found", "Not Found");
                             done(201, "Created");
                         });
                     } else {
                         const updatePhotoSql = `UPDATE User SET profile_photo_filename = "${data}" WHERE user_id = ${userId}`
                         db.getPool().query(updatePhotoSql, function(err, result) {
-                            if (err) return done(500, "Internal server error");
+                            if (err) return done(404, "Not Found", "Not Found");
                             done(200, "OK");
                         });
                     }
                 });
 
             });
-
-
-
-            //fs.readFile(photoFile, function(err, data) {
-                //if (err) throw err;
-                // Encode to base64
-                //const encodedImage = new Buffer(data, 'binary').toString('base64');
-                //console.log(encodedImage);
-                //const decodedImage = new Buffer(encodedImage, 'base64').toString('binary');
-                //console.log(decodedImage);
-            //});
-                // Decode from base64
-                //
-            });
-            
         });
+
+    });
 };
 
+exports.getUserPhoto = async function (userId, request, done) {
+    const sql = `SELECT profile_photo_filename FROM User WHERE user_id = "${userId}"`
+    db.getPool().query(sql, function(err, result) {
+        if (err) return done(404, "Not Found", "Not Found");
+        //console.log(result);
+        done(200, "OK");
+    });
+};
+
+exports.deleteUserPhoto = function(token, userId, done) {
+    help.getUserIdFromToken(token, function(currentUser) {
+        help.checkAuthenticated(currentUser, function(isAuthorised){
+            if (!isAuthorised) {
+                return done(401, "Unauthorized");
+            }
+            if((currentUser != userId)) {
+                return done(403, "Forbidden", "Forbidden");
+            }
+            const sql = `UPDATE User SET profile_photo_filename = NULL WHERE user_id = "${userId}"`;
+            db.getPool().query(sql, function(err) {
+                if (err) return done(404, "Not Found", "Not Found");
+                return done(200, "OK");
+            });
+        });
+    });
+};
 
 /*
 exports.addPhotoToVenue = async function (token, venueId, venueValues, done) {

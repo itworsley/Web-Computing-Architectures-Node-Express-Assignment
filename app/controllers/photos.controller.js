@@ -23,4 +23,21 @@ exports.addPhotoToUser = async function(req, res) {
         res.statusMessage = statusMessage;
         res.status(statusCode).send(result);
     });
-}
+};
+
+exports.getUserPhoto = async function(req, res) {
+    let userId =  req.params.id;
+    Photo.getUserPhoto(userId, req, function(statusCode, statusMessage, result) {
+        res.statusMessage = statusMessage;
+        res.status(statusCode).send(result);
+    });
+};
+
+exports.deleteUserPhoto = async function(req, res) {
+    let token = req.header("X-Authorization");
+    let userId =  req.params.id;
+    Photo.deleteUserPhoto(token, userId,function(statusCode, statusMessage) {
+        res.statusMessage = statusMessage;
+        res.status(statusCode).send(statusMessage);
+    });
+};
