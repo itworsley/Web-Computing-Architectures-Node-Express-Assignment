@@ -1,6 +1,6 @@
 const db = require('../../config/db');
 const help = require('../lib/helpers');
-
+const passwordHash = require('password-hash');
 /**
  * Gets all users within the database, function is not used anymore.
  * @returns {Promise<*>}
@@ -86,7 +86,7 @@ exports.updateUser = async function (token, givenId, userValues, done) {
             // Checks all fields are not empty
             for (const value in userValues) {
                 if (userValues[value].length === 0) {
-                    return done(400, "Bad Request")
+                    return done(400, "Bad Request", "Bad Request")
                 }
             }
             let values = '';
@@ -116,7 +116,7 @@ exports.updateUser = async function (token, givenId, userValues, done) {
             if (userValues['email']) {
                 //Check the email contains a '@' character
                 if (!userValues['email'].includes("@")) {
-                    return done(400, "Bad Request");
+                    return done(400, "Bad Request", "Bad Request");
                 }
                 if (!isEmpty) {
                     values = values + ", ";
@@ -127,12 +127,12 @@ exports.updateUser = async function (token, givenId, userValues, done) {
             }
             if (userValues['password']) {
                 if(!typeof(userValues['password']) == 'string' || !isNaN(userValues['password'])) {
-                    return done(400, "Bad Request");
+                    return done(400, "Bad Request", "Bad Request");
                 }
                 if (!isEmpty) {
                     values = values + ", ";
                 }
-                values = values + `password = "${userValues.password}"`;
+                values = values + `password = "${passwordHash.generate(userValues.password)}"`;
             }
             const sql = `UPDATE User SET ${values} WHERE user_id = ${givenId}`;
             db.getPool().query(sql, function(err, result) {
@@ -153,19 +153,23 @@ exports.loginUser = async function (field, value, password, done) {
         if (err) return done(500, "Internal Server Error", "Internal Server Error");
         if (res.length === 0)  return done(400, "Bad Request", "Bad Request");
         let givenPassword = res[0].password;
-        if (!(givenPassword === password)) return done(400, "Bad Request", "Bad Request");
-        const sql = `UPDATE User SET auth_token = "${token}" WHERE ${field} = "${value}" AND password = "${password}"`;
-        db.getPool().query(sql, function(err, res) {
-            if (res.affectedRows === 0) return done(400, "Bad Request", "Bad Request");
-            if (err) return done(500, "Internal Server Error", "Internal Server Error");
-            help.getUserIdFromToken(token, function (userId) {
-                if (userId) {
-                    return done(200, "OK", {"userId": userId, "token": token});
-                } else {
-                    return done(500, "Internal Server Error", "Internal Server Error");
-                }
+        if ((passwordHash.verify(password, givenPassword))) {
+            const sql = `UPDATE User SET auth_token = "${token}" WHERE ${field} = "${value}" AND password = "${givenPassword}"`;
+            db.getPool().query(sql, function(err, res) {
+                if (res.affectedRows === 0) return done(400, "Bad Request", "Bad Request");
+                if (err) return done(500, "Internal Server Error", "Internal Server Error");
+                help.getUserIdFromToken(token, function (userId) {
+                    if (userId) {
+                        return done(200, "OK", {"userId": userId, "token": token});
+                    } else {
+                        return done(500, "Internal Server Error", "Internal Server Error");
+                    }
+                });
             });
-        });
+
+        } else {
+            return done(400, "Bad Request", "Bad Request");
+        }
     });
 }
 

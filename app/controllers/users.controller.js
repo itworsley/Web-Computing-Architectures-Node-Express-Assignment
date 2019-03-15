@@ -1,5 +1,6 @@
 const User = require('../models/users.model');
 const db = require('../../config/db');
+const passwordHash = require('password-hash');
 
 exports.getAllUsers = async function (req, res) {
     const sqlCommand = String(req.body);
@@ -36,7 +37,7 @@ exports.createUser = async function (req, res) {
         const email = user_data["email"];
         const given_name = user_data["given_name"].toString();
         const family_name = user_data["family_name"].toString();
-        const password = user_data["password"].toString();
+        const password = passwordHash.generate(user_data["password"].toString());
         const values = [[username, email, given_name, family_name, password]];
 
         /* Checks if password is empty or email doesn't contain an @ symbol*/
