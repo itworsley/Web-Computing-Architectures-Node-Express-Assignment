@@ -52,7 +52,7 @@ exports.createReview = async function (token, venueId, reviewValues, done) {
             const checkVenueAdmin = `SELECT admin_id FROM Venue WHERE venue_id = ${venueId}`
             db.getPool().query(checkVenueAdmin, function(err, result) {
                 if((currentUser == result[0].admin_id)) {
-                    console.log("THIS ONE");
+                    //console.log("THIS ONE");
                     return done(403, "Forbidden");
                 }
             });
@@ -87,7 +87,6 @@ exports.createReview = async function (token, venueId, reviewValues, done) {
                     let values = `"${venueId}", "${currentUser}", "${reviewValues.reviewBody}", "${reviewValues.starRating}", "${reviewValues.costRating}", "${timePosted}"`
                     const sql = `INSERT INTO Review (${fields}) VALUES (${values})`;
                     db.getPool().query(sql, function(err, result) {
-                        if (err) return done(400, "Bad request", "Bad request");
                         return done(201, "Created");
                     });
                 }
