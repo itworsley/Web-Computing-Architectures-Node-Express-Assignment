@@ -58,7 +58,7 @@ exports.updateVenue = function (token, venueId, venueValues, done) {
     help.getUserIdFromToken(token, function(currentUser) {
         help.checkAuthenticated(currentUser, function (isAuthorised) {
             if (!isAuthorised) {
-                return done(401, "Unauthorized");
+                return done(401, "Unauthorized", "Unauthorized");
             }
             // Check that the user that is logged owns the venue
             const userSql = `SELECT admin_id FROM Venue WHERE venue_id = ${venueId}`;
@@ -129,7 +129,7 @@ exports.updateVenue = function (token, venueId, venueValues, done) {
                 const sql = `UPDATE Venue SET ${values} WHERE venue_id = "${venueId}"`;
                 db.getPool().query(sql, function(err, result) {
                     if (err) return done(500, "Internal server error");
-                    done(200, "OK");
+                    done(200, "OK", "OK");
                 });
             });
         });

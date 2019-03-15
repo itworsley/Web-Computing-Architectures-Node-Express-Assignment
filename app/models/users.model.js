@@ -78,10 +78,10 @@ exports.updateUser = async function (token, givenId, userValues, done) {
         help.checkAuthenticated(currentUser, function(isAuthorised) {
             //If current user is authorised to edit user.
             if(!isAuthorised) {
-                return done(401, "Unauthorized");
+                return done(401, "Unauthorized", "Unauthorized");
             }
             if(!(currentUser == givenId)) {
-                return done(403, "Forbidden");
+                return done(403, "Forbidden", "Forbidden");
             }
             // Checks all fields are not empty
             for (const value in userValues) {
@@ -137,7 +137,7 @@ exports.updateUser = async function (token, givenId, userValues, done) {
             const sql = `UPDATE User SET ${values} WHERE user_id = ${givenId}`;
             db.getPool().query(sql, function(err, result) {
                 if (err) return done(500, "Internal server error");
-                done(200, "OK");
+                done(200, "OK", "OK");
             });
         });
     });
@@ -173,12 +173,12 @@ exports.logoutUser = function(token, done) {
     help.getUserIdFromToken(token, function(user) {
         help.checkAuthenticated(user, function(isAuthorised){
             if (!isAuthorised) {
-                return done(401, "Unauthorized");
+                return done(401, "Unauthorized", "Unauthorized");
             }
             const sql = `UPDATE User SET auth_token = NULL WHERE user_id = "${user}"`;
             db.getPool().query(sql, function(err) {
                 if (err) return done(500, "Internal server error");
-                return done(200, "OK");
+                return done(200, "OK", "OK");
             });
         });
     });

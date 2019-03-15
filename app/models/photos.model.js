@@ -40,7 +40,7 @@ exports.addPhotoToUser = async function (token, userId, request, done) {
                                 const updatePhotoSql = `UPDATE User SET profile_photo_filename = "${data}" WHERE user_id = ${userId}`;
                                 db.getPool().query(updatePhotoSql, function(err, result) {
                                     if (err) return done(404, "Not Found", "Not Found");
-                                    done(200, "OK");
+                                    done(200, "OK", "OK");
                                 });
                             }
                         });
@@ -83,7 +83,7 @@ exports.deleteUserPhoto = function(token, userId, done) {
             help.getUserIdFromToken(token, function (currentUser) {
                 help.checkAuthenticated(currentUser, function (isAuthorised) {
                     if (!isAuthorised) {
-                        return done(401, "Unauthorized");
+                        return done(401, "Unauthorized", "Unauthorized");
                     }
                     if ((currentUser != userId)) {
                         return done(403, "Forbidden", "Forbidden");
@@ -96,7 +96,7 @@ exports.deleteUserPhoto = function(token, userId, done) {
                             const sql = `UPDATE User SET profile_photo_filename = NULL WHERE user_id = "${userId}"`;
                             db.getPool().query(sql, function (err) {
                                 if (err) return done(404, "Not Found", "Not Found");
-                                return done(200, "OK");
+                                return done(200, "OK", "OK");
                             });
                         }
                     });
