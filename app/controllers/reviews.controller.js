@@ -41,6 +41,7 @@ exports.createReview = async function (req, res) {
     const token = req.header("X-Authorization");
     const id = req.params.id;
     let length = Object.keys(req.body).length;
+
     if (length === 0) {
         res.statusMessage = "Bad Request";
         return res.status(400).send("Bad Request");
