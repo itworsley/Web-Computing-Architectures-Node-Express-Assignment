@@ -3,72 +3,106 @@ const help = require('../lib/helpers');
 const fs = require("fs");
 
 exports.addPhotoToUser = async function (token, userId, request, done) {
-    help.getUserIdFromToken(token, function(currentUser) {
-        help.checkAuthenticated(currentUser, function (isAuthorised) {
-            if (!isAuthorised) {
-                return done(401, "Unauthorized", "Unauthorized");
-            }
-            if((currentUser !=userId)) {
-                return done(403, "Forbidden", "Forbidden");
-            }
-
-            const buffer = new Buffer.from(request.body).toString("base64");
-            if (request.headers['content-type']=='image/png') {
-                fs.writeFile("app/photos/" + userId, buffer, function(err, data) {});
-            } else if (request.headers['content-type']=='image/jpeg') {
-                fs.writeFile("app/photos/" + userId, buffer, function(err, data) {});
-            } else {
-                return done(400, "Bad Request");
-            }
-            fs.readFile("app/photos/" + userId, function(err, data) {
-                const checkUserPhotoSql = `SELECT profile_photo_filename FROM User WHERE user_id = ${userId}`
-                db.getPool().query(checkUserPhotoSql, function(err, result) {
-                    // If there is no profile photo
-                    if (result[0].profile_photo_filename == null) {
-                        const addPhotoSql = `UPDATE User SET profile_photo_filename = "${data}" WHERE user_id = ${userId}`
-                        db.getPool().query(addPhotoSql, function(err, result) {
-                            if (err) return done(404, "Not Found", "Not Found");
-                            done(201, "Created");
-                        });
-                    } else {
-                        const updatePhotoSql = `UPDATE User SET profile_photo_filename = "${data}" WHERE user_id = ${userId}`
-                        db.getPool().query(updatePhotoSql, function(err, result) {
-                            if (err) return done(404, "Not Found", "Not Found");
-                            done(200, "OK");
-                        });
+    const checkUserExists = `SELECT user_id FROM User WHERE user_id = "${userId}"`;
+    db.getPool().query(checkUserExists, function(err, result) {
+        if(result[0] == undefined) {
+            return done(404, "Not Found", "Not Found");
+        } else {
+            help.getUserIdFromToken(token, function(currentUser) {
+                help.checkAuthenticated(currentUser, function (isAuthorised) {
+                    if (!isAuthorised) {
+                        return done(401, "Unauthorized", "Unauthorized");
                     }
+                    if((currentUser !=userId)) {
+                        return done(403, "Forbidden", "Forbidden");
+                    }
+
+                    const buffer = new Buffer.from(request.body).toString("binary");
+                    console.log(buffer);
+                    if (request.headers['content-type']=='image/png') {
+                        fs.writeFile("app/photos/" + userId, buffer, function(err, data) {});
+                    } else if (request.headers['content-type']=='image/jpeg') {
+                        fs.writeFile("app/photos/" + userId, buffer, function(err, data) {});
+                    } else {
+                        return done(400, "Bad Request");
+                    }
+                    fs.readFile("app/photos/" + userId, function(err, data) {
+                        const checkUserPhotoSql = `SELECT profile_photo_filename FROM User WHERE user_id = ${userId}`
+                        db.getPool().query(checkUserPhotoSql, function(err, result) {
+                            // If there is no profile photo
+                            if (result[0].profile_photo_filename == null) {
+                                const addPhotoSql = `UPDATE User SET profile_photo_filename = "${data}" WHERE user_id = ${userId}`;
+                                db.getPool().query(addPhotoSql, function(err, result) {
+                                    if (err) return done(404, "Not Found", "Not Found");
+                                    done(201, "Created");
+                                });
+                            } else {
+                                const updatePhotoSql = `UPDATE User SET profile_photo_filename = "${data}" WHERE user_id = ${userId}`;
+                                db.getPool().query(updatePhotoSql, function(err, result) {
+                                    if (err) return done(404, "Not Found", "Not Found");
+                                    done(200, "OK");
+                                });
+                            }
+                        });
+
+                    });
                 });
 
             });
-        });
-
+        }
     });
+
 };
 
 exports.getUserPhoto = async function (userId, request, done) {
-    const sql = `SELECT profile_photo_filename FROM User WHERE user_id = "${userId}"`
-    db.getPool().query(sql, function(err, result) {
-        if (err) return done(404, "Not Found", "Not Found");
-        //console.log(result);
-        done(200, "OK");
+    const checkUserSql = `SELECT * From User WHERE user_id = "${userId}"`;
+    db.getPool().query(checkUserSql, function(err, result) {
+        if (result.length == 0) {
+            return done(404, "Not Found", "Not Found");
+        } else {
+            const sql = `SELECT profile_photo_filename FROM User WHERE user_id = "${userId}"`;
+            db.getPool().query(sql, function(err, result) {
+                if (err) return done(404, "Not Found", "Not Found");
+                if (result[0].profile_photo_filename == null) {
+                    return done(404, "Not Found", "Not Found");
+                }
+                //console.log(result);
+                done(200, "OK", result[0].profile_photo_filename);
+            });
+        }
     });
+
 };
 
 exports.deleteUserPhoto = function(token, userId, done) {
-    help.getUserIdFromToken(token, function(currentUser) {
-        help.checkAuthenticated(currentUser, function(isAuthorised){
-            if (!isAuthorised) {
-                return done(401, "Unauthorized");
-            }
-            if((currentUser != userId)) {
-                return done(403, "Forbidden", "Forbidden");
-            }
-            const sql = `UPDATE User SET profile_photo_filename = NULL WHERE user_id = "${userId}"`;
-            db.getPool().query(sql, function(err) {
-                if (err) return done(404, "Not Found", "Not Found");
-                return done(200, "OK");
+    const checkUserExists = `SELECT user_id FROM User WHERE user_id = "${userId}"`;
+    db.getPool().query(checkUserExists, function(err, result) {
+        if (result[0] == undefined) {
+            return done(404, "Not Found", "Not Found");
+        } else {
+            help.getUserIdFromToken(token, function (currentUser) {
+                help.checkAuthenticated(currentUser, function (isAuthorised) {
+                    if (!isAuthorised) {
+                        return done(401, "Unauthorized");
+                    }
+                    if ((currentUser != userId)) {
+                        return done(403, "Forbidden", "Forbidden");
+                    }
+                    const checkUserPhoto = `SELECT profile_photo_filename FROM User WHERE user_id = "${userId}"`;
+                    db.getPool().query(checkUserPhoto, function (err, result) {
+                        if (result[0].profile_photo_filename == null) {
+                            return done(404, "Not Found", "Not Found");
+                        } else {
+                            const sql = `UPDATE User SET profile_photo_filename = NULL WHERE user_id = "${userId}"`;
+                            db.getPool().query(sql, function (err) {
+                                if (err) return done(404, "Not Found", "Not Found");
+                                return done(200, "OK");
+                            });
+                        }
+                    });
+                });
             });
-        });
+        }
     });
 };
 
