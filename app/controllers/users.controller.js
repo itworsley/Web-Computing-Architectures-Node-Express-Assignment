@@ -17,7 +17,7 @@ exports.getAllUsers = async function (req, res) {
 };
 
 exports.getSingleUser = async function (req, res) {
-    const id = req.params.userId;
+    const id = req.params.id;
     const token = req.header("X-Authorization");
     User.getSingleUser(id, token, function(statusCode, statusMessage, result) {
         res.statusMessage = statusMessage;
@@ -73,7 +73,7 @@ exports.updateUser = async function (req, res) {
         res.statusMessage = "Bad Request";
         return res.status(400).send();
     }
-    const id = req.params.userId;
+    const id = req.params.id;
     let token = req.header("X-Authorization");
     User.updateUser(token, id, req.body, function(statusCode, statusMessage) {
         res.statusMessage = statusMessage;

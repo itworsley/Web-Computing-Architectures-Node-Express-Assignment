@@ -5,7 +5,7 @@ module.exports = function (app) {
         .get(users.getAllUsers)
         .post(users.createUser);
 
-    app.route(app.rootUrl + '/users/:userId')
+    app.route(app.rootUrl + '/users/:id')
         .get(users.getSingleUser)
         .patch(users.updateUser);
         //.delete(users.delete);

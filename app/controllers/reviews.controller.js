@@ -29,13 +29,13 @@ exports.getAllReviews = async function (req, res) {
 };
 
 exports.getUserReviews = async function (req, res) {
-    const id = req.params.userId;
+    const id = req.params.id;
     const token = req.header("X-Authorization");
     Review.getUserReviews(id, token,function(statusCode, statusMessage, result ) {
             res.statusMessage = statusMessage;
             res.status(statusCode).json(result);
     })
-}
+};
 
 exports.createReview = async function (req, res) {
     const token = req.header("X-Authorization");

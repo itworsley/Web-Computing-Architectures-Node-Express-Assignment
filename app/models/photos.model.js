@@ -34,7 +34,7 @@ exports.addPhotoToUser = async function (token, userId, request, done) {
                                 const addPhotoSql = `UPDATE User SET profile_photo_filename = "${data}" WHERE user_id = ${userId}`;
                                 db.getPool().query(addPhotoSql, function(err, result) {
                                     if (err) return done(404, "Not Found", "Not Found");
-                                    done(201, "Created");
+                                    done(201, "Created", "Created");
                                 });
                             } else {
                                 const updatePhotoSql = `UPDATE User SET profile_photo_filename = "${data}" WHERE user_id = ${userId}`;

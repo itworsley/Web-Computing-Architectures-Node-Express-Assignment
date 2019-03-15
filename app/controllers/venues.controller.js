@@ -30,7 +30,7 @@ exports.getAllVenues = async function (req, res) {
  */
 exports.getSingleVenue = async function (req, res) {
     const sqlCommand = String(req.body);
-    const id = req.params.venueId;
+    const id = req.params.id;
     const results = await Venue.getSingleVenue(id, sqlCommand);
     if (results.length > 0) {
         const venue = results[0].venue_name;
@@ -82,7 +82,7 @@ exports.createVenue = async function (req, res) {
 };
 
 exports.updateVenue = function(req, res) {
-    let venueId = req.params.venueId;
+    let venueId = req.params.id;
     let token = req.header("X-Authorization");
 
     // Check the request body is not empty

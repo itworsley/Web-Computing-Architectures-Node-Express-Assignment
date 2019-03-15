@@ -5,7 +5,7 @@ module.exports = function (app) {
         .get(reviews.getAllReviews)
         .post(reviews.createReview);
 
-    app.route(app.rootUrl + '/users/:userId/reviews')
+    app.route(app.rootUrl + '/users/:id/reviews')
         .get(reviews.getUserReviews)
 
 }
