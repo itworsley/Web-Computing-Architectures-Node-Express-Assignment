@@ -48,54 +48,54 @@ exports.createReview = async function (token, venueId, reviewValues, done) {
         help.checkAuthenticated(currentUser, function (isAuthorised) {
             if (!isAuthorised) {
                 return done(401, "Unauthorized", "Unauthorized");
+            } else {
+                const checkVenueAdmin = `SELECT admin_id FROM Venue WHERE venue_id = ${venueId}`
+                db.getPool().query(checkVenueAdmin, function(err, result) {
+                    if((currentUser == result[0].admin_id)) {
+                        //console.log("THIS ONE");
+                        return done(403, "Forbidden", "Forbidden");
+                    } else {
+                        const checkIfReviewed = `SELECT Review.reviewed_venue_id, Review.review_author_id From Review WHERE review_author_id = ${currentUser} AND reviewed_venue_id = ${venueId}`
+                        db.getPool().query(checkIfReviewed, function(err, result) {
+                            if(result.length == 0) {
+                                let timePosted = new Date();
+                                let dd = timePosted.getDate();
+                                let mm = timePosted.getMonth()+1;
+                                let yyyy = timePosted.getFullYear();
+                                let hh = timePosted.getHours();
+                                let min = timePosted.getMinutes();
+                                let ss = timePosted.getSeconds();
+                                if(mm<10) {
+                                    mm='0'+mm;
+                                }
+                                if(dd<10) {
+                                    dd='0'+dd;
+                                }
+                                if(hh<10) {
+                                    hh='0'+hh;
+                                }
+                                if(min<10) {
+                                    min='0'+min;
+                                }
+                                if(ss<10) {
+                                    ss='0'+ss;
+                                }
+                                timePosted = yyyy + '-' + mm + '-' + dd + " " + hh + ":" + min + ":" + ss;
+
+                                let fields = 'reviewed_venue_id, review_author_id, review_body, star_rating, cost_rating, time_posted';
+                                let values = `"${venueId}", "${currentUser}", "${reviewValues.reviewBody}", "${reviewValues.starRating}", "${reviewValues.costRating}", "${timePosted}"`
+                                const sql = `INSERT INTO Review (${fields}) VALUES (${values})`;
+                                db.getPool().query(sql, function(err, result) {
+                                    return done(201, "Created", "Created");
+                                });
+                            }
+                            else {
+                                return done(403, "Forbidden", "Forbidden");
+                            }
+                        });
+                    }
+                });
             }
-            const checkVenueAdmin = `SELECT admin_id FROM Venue WHERE venue_id = ${venueId}`
-            db.getPool().query(checkVenueAdmin, function(err, result) {
-                if((currentUser == result[0].admin_id)) {
-                    //console.log("THIS ONE");
-                    return done(403, "Forbidden", "Forbidden");
-                } else {
-                    const checkIfReviewed = `SELECT Review.reviewed_venue_id, Review.review_author_id From Review WHERE review_author_id = ${currentUser} AND reviewed_venue_id = ${venueId}`
-                    db.getPool().query(checkIfReviewed, function(err, result) {
-                        if(result.length == 0) {
-                            let timePosted = new Date();
-                            let dd = timePosted.getDate();
-                            let mm = timePosted.getMonth()+1;
-                            let yyyy = timePosted.getFullYear();
-                            let hh = timePosted.getHours();
-                            let min = timePosted.getMinutes();
-                            let ss = timePosted.getSeconds();
-                            if(mm<10) {
-                                mm='0'+mm;
-                            }
-                            if(dd<10) {
-                                dd='0'+dd;
-                            }
-                            if(hh<10) {
-                                hh='0'+hh;
-                            }
-                            if(min<10) {
-                                min='0'+min;
-                            }
-                            if(ss<10) {
-                                ss='0'+ss;
-                            }
-                            timePosted = yyyy + '-' + mm + '-' + dd + " " + hh + ":" + min + ":" + ss;
-
-                            let fields = 'reviewed_venue_id, review_author_id, review_body, star_rating, cost_rating, time_posted';
-                            let values = `"${venueId}", "${currentUser}", "${reviewValues.reviewBody}", "${reviewValues.starRating}", "${reviewValues.costRating}", "${timePosted}"`
-                            const sql = `INSERT INTO Review (${fields}) VALUES (${values})`;
-                            db.getPool().query(sql, function(err, result) {
-                                return done(201, "Created", "Created");
-                            });
-                        }
-                        else {
-                            return done(403, "Forbidden", "Forbidden");
-                        }
-                    });
-                }
-            });
-
         });
     });
 };

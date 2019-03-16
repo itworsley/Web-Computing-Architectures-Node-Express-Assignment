@@ -79,66 +79,68 @@ exports.updateUser = async function (token, givenId, userValues, done) {
             //If current user is authorised to edit user.
             if(!isAuthorised) {
                 return done(401, "Unauthorized", "Unauthorized");
-            }
-            if(!(currentUser == givenId)) {
-                return done(403, "Forbidden", "Forbidden");
-            }
-            // Checks all fields are not empty
-            for (const value in userValues) {
-                if (userValues[value].length === 0) {
-                    return done(400, "Bad Request", "Bad Request")
-                }
-            }
-            let values = '';
-            let isEmpty = true;
-            if (userValues['username']) {
-                if (!isEmpty) {
-                    values = values + ", ";
-                }
-                values = values + `username = "${userValues.username}"`;
-                isEmpty = false;
-            }
-            if (userValues['givenName']) {
-                if (!isEmpty) {
-                    values = values + ", ";
-                }
-                values = values + `given_name = "${userValues.givenName}"`;
-                isEmpty = false;
-            }
-            if (userValues['familyName']) {
-                if (!isEmpty) {
-                    values = values + ", ";
-                }
-                values = values + `family_name = "${userValues.familyName}"`;
-                isEmpty = false;
+            } else {
+                if(!(currentUser == givenId)) {
+                    return done(403, "Forbidden", "Forbidden");
+                } else {
+                    // Checks all fields are not empty
+                    for (const value in userValues) {
+                        if (userValues[value].length === 0) {
+                            return done(400, "Bad Request", "Bad Request")
+                        }
+                    }
+                    let values = '';
+                    let isEmpty = true;
+                    if (userValues['username']) {
+                        if (!isEmpty) {
+                            values = values + ", ";
+                        }
+                        values = values + `username = "${userValues.username}"`;
+                        isEmpty = false;
+                    }
+                    if (userValues['givenName']) {
+                        if (!isEmpty) {
+                            values = values + ", ";
+                        }
+                        values = values + `given_name = "${userValues.givenName}"`;
+                        isEmpty = false;
+                    }
+                    if (userValues['familyName']) {
+                        if (!isEmpty) {
+                            values = values + ", ";
+                        }
+                        values = values + `family_name = "${userValues.familyName}"`;
+                        isEmpty = false;
 
-            }
-            if (userValues['email']) {
-                //Check the email contains a '@' character
-                if (!userValues['email'].includes("@")) {
-                    return done(400, "Bad Request", "Bad Request");
-                }
-                if (!isEmpty) {
-                    values = values + ", ";
-                }
-                values = values + `email = "${userValues.email}"`;
-                isEmpty = false;
+                    }
+                    if (userValues['email']) {
+                        //Check the email contains a '@' character
+                        if (!userValues['email'].includes("@")) {
+                            return done(400, "Bad Request", "Bad Request");
+                        }
+                        if (!isEmpty) {
+                            values = values + ", ";
+                        }
+                        values = values + `email = "${userValues.email}"`;
+                        isEmpty = false;
 
-            }
-            if (userValues['password']) {
-                if(!typeof(userValues['password']) == 'string' || !isNaN(userValues['password'])) {
-                    return done(400, "Bad Request", "Bad Request");
+                    }
+                    if (userValues['password']) {
+                        if(!typeof(userValues['password']) == 'string' || !isNaN(userValues['password'])) {
+                            return done(400, "Bad Request", "Bad Request");
+                        }
+                        if (!isEmpty) {
+                            values = values + ", ";
+                        }
+                        values = values + `password = "${passwordHash.generate(userValues.password)}"`;
+                    }
+                    const sql = `UPDATE User SET ${values} WHERE user_id = ${givenId}`;
+                    db.getPool().query(sql, function(err, result) {
+                        if (err) return done(500, "Internal server error");
+                        done(200, "OK", "OK");
+                    });
                 }
-                if (!isEmpty) {
-                    values = values + ", ";
-                }
-                values = values + `password = "${passwordHash.generate(userValues.password)}"`;
             }
-            const sql = `UPDATE User SET ${values} WHERE user_id = ${givenId}`;
-            db.getPool().query(sql, function(err, result) {
-                if (err) return done(500, "Internal server error");
-                done(200, "OK", "OK");
-            });
         });
     });
 };
