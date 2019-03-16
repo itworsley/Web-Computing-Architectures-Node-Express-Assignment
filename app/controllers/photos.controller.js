@@ -10,19 +10,29 @@ exports.addPhotoToVenue = async function(req, res) {
     }
     let token = req.header("X-Authorization");
     let venueId =  req.params.id;
-    Photo.addPhotoToVenue(token, venueId, req, function(statusCode, statusMessage, result) {
-        res.statusMessage = statusMessage;
-        res.status(statusCode).send(result);
-    });
+    if (!req.header("X-Authorization")) {
+        res.statusMessage = "Unauthorized";
+        return res.status(401).send("Unauthorized");
+    } else {
+        Photo.addPhotoToVenue(token, venueId, req, function (statusCode, statusMessage, result) {
+            res.statusMessage = statusMessage;
+            res.status(statusCode).send(result);
+        });
+    }
 };
 
 exports.addPhotoToUser = async function(req, res) {
     let token = req.header("X-Authorization");
     let userId =  req.params.id;
-    Photo.addPhotoToUser(token, userId, req, function(statusCode, statusMessage, result) {
-        res.statusMessage = statusMessage;
-        res.status(statusCode).send(result);
-    });
+    if (!req.header("X-Authorization")) {
+        res.statusMessage = "Unauthorized";
+        return res.status(401).send("Unauthorized");
+    } else {
+        Photo.addPhotoToUser(token, userId, req, function (statusCode, statusMessage, result) {
+            res.statusMessage = statusMessage;
+            res.status(statusCode).send(result);
+        });
+    }
 };
 
 exports.getUserPhoto = async function(req, res) {
@@ -35,9 +45,14 @@ exports.getUserPhoto = async function(req, res) {
 
 exports.deleteUserPhoto = async function(req, res) {
     let token = req.header("X-Authorization");
-    let userId =  req.params.id;
-    Photo.deleteUserPhoto(token, userId,function(statusCode, statusMessage) {
-        res.statusMessage = statusMessage;
-        res.status(statusCode).send(statusMessage);
-    });
+    if (!req.header("X-Authorization")) {
+        res.statusMessage = "Unauthorized";
+        return res.status(401).send("Unauthorized");
+    } else {
+        let userId = req.params.id;
+        Photo.deleteUserPhoto(token, userId, function (statusCode, statusMessage) {
+            res.statusMessage = statusMessage;
+            res.status(statusCode).send(statusMessage);
+        });
+    }
 };

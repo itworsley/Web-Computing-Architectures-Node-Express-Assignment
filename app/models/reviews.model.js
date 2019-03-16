@@ -47,13 +47,13 @@ exports.createReview = async function (token, venueId, reviewValues, done) {
     help.getUserIdFromToken(token, function(currentUser) {
         help.checkAuthenticated(currentUser, function (isAuthorised) {
             if (!isAuthorised) {
-                return done(401, "Unauthorized", "Unauthorized");
+                done(401, "Unauthorized", "Unauthorized");
             } else {
                 const checkVenueAdmin = `SELECT admin_id FROM Venue WHERE venue_id = ${venueId}`
                 db.getPool().query(checkVenueAdmin, function(err, result) {
                     if((currentUser == result[0].admin_id)) {
                         //console.log("THIS ONE");
-                        return done(403, "Forbidden", "Forbidden");
+                        done(403, "Forbidden", "Forbidden");
                     } else {
                         const checkIfReviewed = `SELECT Review.reviewed_venue_id, Review.review_author_id From Review WHERE review_author_id = ${currentUser} AND reviewed_venue_id = ${venueId}`
                         db.getPool().query(checkIfReviewed, function(err, result) {
@@ -86,11 +86,11 @@ exports.createReview = async function (token, venueId, reviewValues, done) {
                                 let values = `"${venueId}", "${currentUser}", "${reviewValues.reviewBody}", "${reviewValues.starRating}", "${reviewValues.costRating}", "${timePosted}"`
                                 const sql = `INSERT INTO Review (${fields}) VALUES (${values})`;
                                 db.getPool().query(sql, function(err, result) {
-                                    return done(201, "Created", "Created");
+                                    done(201, "Created", "Created");
                                 });
                             }
                             else {
-                                return done(403, "Forbidden", "Forbidden");
+                                done(403, "Forbidden", "Forbidden");
                             }
                         });
                     }

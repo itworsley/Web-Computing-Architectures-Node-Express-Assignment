@@ -20,15 +20,10 @@ exports.getAllUsers = async function (req, res) {
 exports.getSingleUser = async function (req, res) {
     const id = req.params.id;
     const token = req.header("X-Authorization");
-    if (!req.header("X-Authorization")) {
-        res.statusMessage = "Unauthorized";
-        return res.status(401).send("Unauthorized");
-    } else {
-        User.getSingleUser(id, token, function (statusCode, statusMessage, result) {
-            res.statusMessage = statusMessage;
-            res.status(statusCode).json(result);
-        });
-    }
+    User.getSingleUser(id, token, function (statusCode, statusMessage, result) {
+        res.statusMessage = statusMessage;
+        res.status(statusCode).json(result);
+    });
 };
 
 exports.createUser = async function (req, res) {
@@ -85,7 +80,10 @@ exports.updateUser = async function (req, res) {
         res.statusMessage = "Unauthorized";
         return res.status(401).send("Unauthorized");
     } else {
-
+        User.updateUser(token, id, req.body, function (statusCode, statusMessage) {
+            res.statusMessage = statusMessage;
+            res.status(statusCode).json(statusMessage);
+        });
     }
 };
 
