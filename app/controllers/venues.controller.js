@@ -1,5 +1,6 @@
 const Venue = require('../models/venues.model');
 const db = require('../../config/db');
+const help = require('../lib/helpers');
 
 /**
  * Gets details of all venues, unused method
@@ -7,19 +8,27 @@ const db = require('../../config/db');
  * @param res
  * @returns {Promise<void>}
  */
-exports.getAllVenues = async function (req, res) {
-    const sqlCommand = String(req.body);
-    try {
-        const results = await Venue.getAllVenues(sqlCommand);
-        res.statusMessage = 'OK';
-        res.status(200)
-            .json(results);
-    } catch (err) {
-        if (!err.hasBeenLogged) console.error(err);
-        res.statusMessage = 'Internal Server Error';
-        res.status(500)
-            .send();
-    }
+// exports.getAllVenues = async function (req, res) {
+//     const sqlCommand = String(req.body);
+//     try {
+//         const results = await Venue.getAllVenues(sqlCommand);
+//         res.statusMessage = 'OK';
+//         res.status(200)
+//             .json(results);
+//     } catch (err) {
+//         if (!err.hasBeenLogged) console.error(err);
+//         res.statusMessage = 'Internal Server Error';
+//         res.status(500)
+//             .send();
+//     }
+// };
+
+exports.getAllVenues = function (req, res) {
+    let searchParams = req.query;
+    Venue.getAllVenues(searchParams, function(statusCode, statusMessage, result)  {
+        res.statusMessage = statusMessage;
+        res.status(statusCode).json(result);
+    });
 };
 
 /**
@@ -66,7 +75,7 @@ exports.createVenue = async function (req, res) {
         //Check all the valid parameters are in the body.
         if (((req.body.venueName) && (req.body.categoryId) && (req.body.city) && (req.body.shortDescription) && (req.body.longDescription) && (req.body.address) && ((req.body.latitude) || (req.body.latitude == 0)) && ((req.body.longitude) || (req.body.longitude == 0)))) {
             //Check latitude and longitude values are valid
-            if ((req.body.latitude < -90) || (req.body.latitude > 90) || (req.body.longitude < -180) || (req.body.longitude > 180)) {
+            if (help.checkLatLong(req.body.latitude, req.body.longitude)) {
                 res.statusMessage = "Bad Request"
                 return res.status(400).send("Bad Request");
             }

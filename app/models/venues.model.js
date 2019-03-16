@@ -1,13 +1,99 @@
 const db = require('../../config/db');
 const help = require('../lib/helpers');
 
-exports.getAllVenues = async function () {
-    try {
-        return await db.getPool().query("SELECT * FROM Venue");
-    } catch (err) {
-        console.log(err);
-        return(err);
+exports.getAllVenues = async function (searchParams, done) {
+    let sqlStart = `SELECT DISTINCT Initial.venue_id, Initial.venue_name, Initial.category_id, Initial.city,Initial.short_description, Initial.latitude, Initial.longitude, Initial.meanStarRating, Initial.modeCostRating `;
+    let sqlStatement = ` FROM (SELECT Venue.venue_id, Venue.venue_name, Venue.admin_id, Venue.category_id, Venue.city, Venue.short_description, Venue.latitude, Venue.longitude, `+
+        `Review.star_rating, Review.cost_rating, (SELECT AVG(Review.star_rating) FROM Review WHERE Review.reviewed_venue_id = Venue.venue_id) AS meanStarRating,` +
+        `(SELECT DISTINCT ModeCostRating.mode_cost_rating FROM ModeCostRating WHERE ModeCostRating.venue_id = Venue.venue_id ORDER BY ModeCostRating.mode_cost_rating DESC LIMIT 1) AS modeCostRating `;
+    if (searchParams['myLatitude'] && searchParams['myLongitude']) {
+        if(help.checkLatLong(searchParams['myLatitude'], searchParams['myLongitude'])) {
+            return done(400, "Bad Request", "Bad Request");
+        } else {
+            sqlStart += ', Initial.distance';
+            sqlStatement += `, 111.111 *
+             DEGREES(ACOS(LEAST(COS(RADIANS(Venue.latitude))
+             * COS(RADIANS(${searchParams['myLatitude']}))
+             * COS(RADIANS(Venue.longitude - ${searchParams['myLongitude']}))
+             + SIN(RADIANS(Venue.latitude))
+             * SIN(RADIANS(${searchParams['myLatitude']})), 1.0))) AS distance `
+        }
+
     }
+    sqlStatement += `FROM Venue LEFT JOIN Review ON Review.reviewed_venue_id = Venue.venue_id) AS Initial WHERE Initial.venue_name LIKE CONCAT("%%")`;
+    sqlStatement = sqlStart + sqlStatement;
+    if (searchParams['city']) {
+        sqlStatement += ` AND Initial.city = "${searchParams['city']}"`;
+    }
+    if (searchParams['q']) {
+        sqlStatement += ` AND Initial.venue_name LIKE CONCAT("%${searchParams['q']}%")`;
+    }
+    if (searchParams['categoryId']) {
+        sqlStatement += ` AND Initial.category_id = "${searchParams['categoryId']}"`;
+    }
+    if (searchParams['adminId']) {
+        sqlStatement += ` AND Initial.admin_id = "${searchParams['adminId']}"`;
+    }
+    if (searchParams['minStarRating']) {
+        sqlStatement += ` AND Initial.meanStarRating >= "${searchParams['minStarRating']}"`;
+    }
+    if (searchParams['maxCostRating']) {
+        sqlStatement += ` AND Initial.modeCostRating <= "${searchParams['maxCostRating']}"`;
+    }
+    if (searchParams['sortBy']) {
+        let order = 'DESC';
+        if (searchParams['reverseSort'] === 'true') {
+            order = 'ASC';
+        }
+        if (searchParams['sortBy'] == 'DISTANCE') {
+            if (!((searchParams['myLatitude']) && searchParams['myLongitude'])) {
+                return done(404, "Bad Request", "Bad Request");
+            } else {
+                sqlStatement += ` ORDER BY Initial.${searchParams['sortBy']} ${order}`;
+            }
+        } else if (searchParams['sortBy'] == 'COST_RATING') {
+            sqlStatement += ` ORDER BY Initial.modeCostRating ${order}`;
+        } else {
+            sqlStatement += ` ORDER BY Initial.meanStarRating ${order}`;
+        }
+    }
+    if (searchParams['sortBy'].length == 0) {
+        let order = 'DESC';
+        if (searchParams['reverseSort'] === 'true') {
+            order = 'ASC';
+        }
+        sqlStatement += ` ORDER BY Initial.meanStarRating ${order}`;
+    }
+    if (searchParams['startIndex']) {
+        if (searchParams['count']) {
+            sqlStatement += ` LIMIT ${searchParams['startIndex']}, ${searchParams['count']} `;
+        } else {
+            sqlStatement += ` LIMIT 99999999999, ${searchParams['startIndex']}`;
+        }
+    }
+    console.log(sqlStatement);
+    db.getPool().query(sqlStatement, function (err, result) {
+        if (err || result.length === 0) return done(404, "Bad Request", "Bad Request");
+        const list = [];
+        for (let i = 0; i < result.length; i++) {
+            if (searchParams['myLatitude'] && searchParams['myLongitude']) {
+                const json_result = {
+                    "venueId": result[i].venue_id, "venueName": result[i].venue_name, "categoryId": result[i].category_id, "city": result[i].city,
+                    "shortDescription": result[i].short_description, "latitude": result[i].latitude, "longitude": result[i].longitude,
+                    "meanStarRating": result[i].meanStarRating, "modeCostRating": result[i].modeCostRating, "distance": result[i].distance
+                };
+                list.push(json_result);
+            } else {
+                const json_result = {
+                    "venueId": result[i].venue_id, "venueName": result[i].venue_name, "categoryId": result[i].category_id, "city": result[i].city,
+                    "shortDescription": result[i].short_description, "latitude": result[i].latitude, "longitude": result[i].longitude,
+                    "meanStarRating": result[i].meanStarRating, "modeCostRating": result[i].modeCostRating
+                };
+                list.push(json_result);
+            }
+        }
+        done(200, "OK", list);
+    });
 
 };
 
@@ -150,3 +236,5 @@ exports.getCategories = async function () {
     }
 
 };
+
+//(SELECT 111.111 * DEGREES(ACOS(LEAST(COS(RADIANS(Initial.latitude)) * COS(RADIANS(-45)) * COS(RADIANS(Initial.longitude - 170)) + SIN(RADIANS(Initial.latitude)) * SIN(RADIANS(170)), 1.0)))) AS distance
