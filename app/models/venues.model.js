@@ -3,7 +3,7 @@ const help = require('../lib/helpers');
 
 exports.getAllVenues = async function (searchParams, done) {
     let sqlStart = `SELECT DISTINCT Initial.venue_id, Initial.venue_name, Initial.category_id, Initial.city,Initial.short_description, Initial.latitude, Initial.longitude, Initial.meanStarRating, Initial.modeCostRating `;
-    let sqlStatement = ` FROM (SELECT Venue.venue_id, Venue.venue_name, Venue.admin_id, Venue.category_id, Venue.city, Venue.short_description, Venue.latitude, Venue.longitude, `+
+    let sqlStatement1 = ` FROM (SELECT Venue.venue_id, Venue.venue_name, Venue.admin_id, Venue.category_id, Venue.city, Venue.short_description, Venue.latitude, Venue.longitude, `+
         `Review.star_rating, Review.cost_rating, (SELECT AVG(Review.star_rating) FROM Review WHERE Review.reviewed_venue_id = Venue.venue_id) AS meanStarRating,` +
         `(SELECT DISTINCT ModeCostRating.mode_cost_rating FROM ModeCostRating WHERE ModeCostRating.venue_id = Venue.venue_id ORDER BY ModeCostRating.mode_cost_rating DESC LIMIT 1) AS modeCostRating `;
     if (searchParams['myLatitude'] && searchParams['myLongitude']) {
@@ -11,7 +11,7 @@ exports.getAllVenues = async function (searchParams, done) {
             return done(400, "Bad Request", "Bad Request");
         } else {
             sqlStart += ', Initial.distance';
-            sqlStatement += `, 111.111 *
+            sqlStatement1 += `, 111.111 *
              DEGREES(ACOS(LEAST(COS(RADIANS(Venue.latitude))
              * COS(RADIANS(${searchParams['myLatitude']}))
              * COS(RADIANS(Venue.longitude - ${searchParams['myLongitude']}))
@@ -20,26 +20,37 @@ exports.getAllVenues = async function (searchParams, done) {
         }
 
     }
-    sqlStatement += `FROM Venue LEFT JOIN Review ON Review.reviewed_venue_id = Venue.venue_id) AS Initial WHERE Initial.venue_name LIKE CONCAT("%%")`;
-    sqlStatement = sqlStart + sqlStatement;
+    let sqlStatement2 = `FROM Venue LEFT JOIN Review ON Review.reviewed_venue_id = Venue.venue_id) AS Initial WHERE Initial.venue_name LIKE CONCAT("%%")`;
+
     if (searchParams['city']) {
-        sqlStatement += ` AND Initial.city = "${searchParams['city']}"`;
+        sqlStatement2 += ` AND Initial.city = "${searchParams['city']}"`;
     }
     if (searchParams['q']) {
-        sqlStatement += ` AND Initial.venue_name LIKE CONCAT("%${searchParams['q']}%")`;
+        sqlStatement2 += ` AND Initial.venue_name LIKE CONCAT("%${searchParams['q']}%")`;
     }
     if (searchParams['categoryId']) {
-        sqlStatement += ` AND Initial.category_id = "${searchParams['categoryId']}"`;
+        sqlStatement2 += ` AND Initial.category_id = "${searchParams['categoryId']}"`;
     }
     if (searchParams['adminId']) {
-        sqlStatement += ` AND Initial.admin_id = "${searchParams['adminId']}"`;
+        sqlStatement2 += ` AND Initial.admin_id = "${searchParams['adminId']}"`;
     }
     if (searchParams['minStarRating']) {
-        sqlStatement += ` AND Initial.meanStarRating >= "${searchParams['minStarRating']}"`;
+        if (searchParams['minStarRating'] >=0 && searchParams['minStarRating']<=5) {
+            sqlStatement2 += ` AND Initial.meanStarRating >= "${searchParams['minStarRating']}"`;
+        } else {
+            return done(400, "Bad Request", "Bad Request");
+        }
+
     }
     if (searchParams['maxCostRating']) {
-        sqlStatement += ` AND Initial.modeCostRating <= "${searchParams['maxCostRating']}"`;
+        if (searchParams['maxCostRating'] >=0 && searchParams['maxCostRating']<=5) {
+            sqlStatement2 += ` AND Initial.modeCostRating <= "${searchParams['maxCostRating']}"`;
+        } else {
+            return done(400, "Bad Request", "Bad Request");
+        }
+
     }
+
     if (searchParams['sortBy']) {
         let order = 'DESC';
         if (searchParams['reverseSort'] === 'true') {
@@ -49,15 +60,16 @@ exports.getAllVenues = async function (searchParams, done) {
             if (!((searchParams['myLatitude']) && searchParams['myLongitude'])) {
                 return done(404, "Bad Request", "Bad Request");
             } else {
-                sqlStatement += ` ORDER BY Initial.${searchParams['sortBy']} ${order}`;
+                sqlStatement2 += ` ORDER BY Initial.${searchParams['sortBy']} ${order}`;
             }
         } else if (searchParams['sortBy'] == 'COST_RATING') {
-            sqlStatement += ` ORDER BY Initial.modeCostRating ${order}`;
+            sqlStatement2 += ` ORDER BY Initial.modeCostRating ${order}`;
         } else {
-            sqlStatement += ` ORDER BY Initial.meanStarRating ${order}`;
+            sqlStatement2 += ` ORDER BY Initial.meanStarRating ${order}`;
         }
     }
-    if (searchParams['sortBy'].length == 0) {
+    let sqlStatement = sqlStart + sqlStatement1 + sqlStatement2;
+    if (searchParams['sortBy'] == undefined) {
         let order = 'DESC';
         if (searchParams['reverseSort'] === 'true') {
             order = 'ASC';
@@ -68,12 +80,12 @@ exports.getAllVenues = async function (searchParams, done) {
         if (searchParams['count']) {
             sqlStatement += ` LIMIT ${searchParams['startIndex']}, ${searchParams['count']} `;
         } else {
-            sqlStatement += ` LIMIT 99999999999, ${searchParams['startIndex']}`;
+            sqlStatement += ` LIMIT ${searchParams['startIndex']}, 99999999999 `;
         }
     }
     console.log(sqlStatement);
     db.getPool().query(sqlStatement, function (err, result) {
-        if (err || result.length === 0) return done(404, "Bad Request", "Bad Request");
+        if (err) return done(404, "Bad Request", "Bad Request");
         const list = [];
         for (let i = 0; i < result.length; i++) {
             if (searchParams['myLatitude'] && searchParams['myLongitude']) {
