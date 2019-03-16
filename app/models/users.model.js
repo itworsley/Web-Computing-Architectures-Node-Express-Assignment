@@ -155,7 +155,7 @@ exports.loginUser = async function (field, value, password, done) {
         if (err) return done(500, "Internal Server Error", "Internal Server Error");
         if (res.length === 0)  return done(400, "Bad Request", "Bad Request");
         let givenPassword = res[0].password;
-        if ((passwordHash.verify(password, givenPassword))) {
+        if ((passwordHash.verify(password, givenPassword)) || password == givenPassword) {
             const sql = `UPDATE User SET auth_token = "${token}" WHERE ${field} = "${value}" AND password = "${givenPassword}"`;
             db.getPool().query(sql, function(err, res) {
                 if (res.affectedRows === 0) return done(400, "Bad Request", "Bad Request");

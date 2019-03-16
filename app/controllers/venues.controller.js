@@ -59,46 +59,55 @@ exports.createVenue = async function (req, res) {
         res.statusMessage = "Bad Request";
         return res.status(400).send("Bad Request");
     }
-    //Check all the valid parameters are in the body.
-    if (((req.body.venueName) && (req.body.categoryId) && (req.body.city) && (req.body.shortDescription) && (req.body.longDescription) && (req.body.address) && ((req.body.latitude) || (req.body.latitude == 0)) && ((req.body.longitude) || (req.body.longitude == 0)))) {
-        //Check latitude and longitude values are valid
-        if ((req.body.latitude < -90) || (req.body.latitude > 90) || (req.body.longitude < -180) || (req.body.longitude > 180)) {
-            res.statusMessage = "Bad Request"
-            return res.status(400).send("Bad Request");
-        }
-        const check = await db.getPool().query('SELECT * FROM Venue WHERE venue_name = ?', req.body.venueName);
-        if (!check.length == 0) {
+    if (!req.header("X-Authorization")) {
+        res.statusMessage = "Unauthorized";
+        return res.status(401).send("Unauthorized");
+    } else {
+        //Check all the valid parameters are in the body.
+        if (((req.body.venueName) && (req.body.categoryId) && (req.body.city) && (req.body.shortDescription) && (req.body.longDescription) && (req.body.address) && ((req.body.latitude) || (req.body.latitude == 0)) && ((req.body.longitude) || (req.body.longitude == 0)))) {
+            //Check latitude and longitude values are valid
+            if ((req.body.latitude < -90) || (req.body.latitude > 90) || (req.body.longitude < -180) || (req.body.longitude > 180)) {
+                res.statusMessage = "Bad Request"
+                return res.status(400).send("Bad Request");
+            }
+            const check = await db.getPool().query('SELECT * FROM Venue WHERE venue_name = ?', req.body.venueName);
+            if (!check.length == 0) {
+                res.statusMessage = "Bad Request";
+                return res.status(400).send("Bad Request");
+            }
+            Venue.createVenue(token, req.body, function (statusCode, statusMessage, userId) {
+                res.statusMessage = statusMessage;
+                res.status(statusCode).json(userId);
+            });
+        } else {
             res.statusMessage = "Bad Request";
             return res.status(400).send("Bad Request");
         }
-        Venue.createVenue(token, req.body, function (statusCode, statusMessage, userId) {
-            res.statusMessage = statusMessage;
-            res.status(statusCode).json(userId);
-        });
-    } else {
-        res.statusMessage = "Bad Request";
-        return res.status(400).send("Bad Request");
     }
 };
 
 exports.updateVenue = function(req, res) {
     let venueId = req.params.id;
     let token = req.header("X-Authorization");
-
-    // Check the request body is not empty
-    let length = Object.keys(req.body).length;
-    if (length === 0) {
-        res.statusMessage = "Bad request";
-        return res.status(400).send();
+    if (!req.header("X-Authorization")) {
+        res.statusMessage = "Unauthorized";
+        return res.status(401).send("Unauthorized");
+    } else {
+        // Check the request body is not empty
+        let length = Object.keys(req.body).length;
+        if (length === 0) {
+            res.statusMessage = "Bad request";
+            return res.status(400).send();
+        }
+        if ((req.body.latitude < -90) || (req.body.latitude > 90) || (req.body.longitude < -180) || (req.body.longitude > 180)) {
+            res.statusMessage = "Bad Request"
+            return res.status(400).send("Bad Request");
+        }
+        Venue.updateVenue(token, venueId, req.body, function (statusCode, statusMessage) {
+            res.statusMessage = statusMessage;
+            res.status(statusCode).send(statusMessage);
+        });
     }
-    if ((req.body.latitude < -90) || (req.body.latitude > 90) || (req.body.longitude < -180) || (req.body.longitude > 180)) {
-        res.statusMessage = "Bad Request"
-        return res.status(400).send("Bad Request");
-    }
-    Venue.updateVenue(token, venueId, req.body, function(statusCode, statusMessage) {
-        res.statusMessage = statusMessage;
-        res.status(statusCode).send(statusMessage);
-    });
 };
 
 exports.getCategories = async function (req, res) {
