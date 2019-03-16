@@ -39,6 +39,10 @@ exports.getUserReviews = async function (req, res) {
 
 exports.createReview = async function (req, res) {
     const token = req.header("X-Authorization");
+    if (!req.headers["X-Authorization"]) {
+        res.statusMessage = "Unauthorized";
+        return res.status(401).send("Unauthorized");
+    }
     const id = req.params.id;
     let length = Object.keys(req.body).length;
 
