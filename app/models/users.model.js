@@ -57,6 +57,7 @@ exports.createUser = async function (user) {
     try {
         return await db.getPool().query('INSERT INTO User (username, email, given_name, family_name, password) VALUES ?', values)
     } catch (err) {
+        if (err && (err.code === 'ER_DUP_ENTRY')) return (400, "Bad Request", "Bad Request");
         console.log(err);
         return (err);
     }
@@ -136,7 +137,7 @@ exports.updateUser = async function (token, givenId, userValues, done) {
                     }
                     const sql = `UPDATE User SET ${values} WHERE user_id = ${givenId}`;
                     db.getPool().query(sql, function(err, result) {
-                        if (err) return done(500, "Internal server error");
+                        if (err && (err.code === 'ER_DUP_ENTRY')) return done(400, "Bad Request", "Bad Request");
                         done(200, "OK", "OK");
                     });
                 }
