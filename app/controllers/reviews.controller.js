@@ -72,9 +72,9 @@ exports.createReview = async function (req, res) {
             return res.status(400).send("Bad Request");
         }
 
-        Review.createReview(token, id, req.body,function(statusCode, statusMessage, result ) {
+        Review.createReview(token, id, req.body,function(statusCode, statusMessage) {
             res.statusMessage = statusMessage;
-            res.status(statusCode).json(result);
+            res.status(statusCode).send();
         })
     }
 

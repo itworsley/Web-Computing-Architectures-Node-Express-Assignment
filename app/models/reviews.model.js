@@ -49,7 +49,6 @@ exports.createReview = async function (token, venueId, reviewValues, done) {
             done(401, "Unauthorized", "Unauthorized");
         } else {
             help.checkAuthenticated(currentUser, function (isAuthorised) {
-                console.log(token);
                 if (!isAuthorised) {
                     done(401, "Unauthorized", "Unauthorized");
                 } else {

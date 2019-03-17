@@ -8,7 +8,7 @@ exports.checkAuthenticated = function(userId, done){
 exports.getUserIdFromToken = function(token, done) {
     const sql = `SELECT user_id FROM User WHERE auth_token = "${token}"`;
     db.getPool().query(sql, function(err, result){
-        if (err) return done(null);
+        if (err) return done(401, "Unauthorized", "Unauthorized");
         if (result.length === 0) return done(null);
         return done(result[0].user_id);
     });
