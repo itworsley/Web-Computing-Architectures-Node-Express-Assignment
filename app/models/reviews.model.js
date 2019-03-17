@@ -46,19 +46,18 @@ exports.getUserReviews = async function (userId, token, done) {
 exports.createReview = async function (token, venueId, reviewValues, done) {
     help.getUserIdFromToken(token, function(currentUser) {
         if(currentUser == null) {
-            done(401, "Unauthorized", "Unauthorized");
+            return done(401, "Unauthorized", "Unauthorized");
         } else {
             help.checkAuthenticated(currentUser, function (isAuthorised) {
                 if (!isAuthorised) {
-                    done(401, "Unauthorized", "Unauthorized");
+                    return done(401, "Unauthorized", "Unauthorized");
                 } else {
                     const checkVenueAdmin = `SELECT admin_id FROM Venue WHERE venue_id = ${venueId}`
                     db.getPool().query(checkVenueAdmin, function(err, result) {
                         if((currentUser == result[0].admin_id)) {
-                            //console.log("THIS ONE");
-                            done(403, "Forbidden", "Forbidden");
+                            return done(403, "Forbidden", "Forbidden");
                         } else {
-                            const checkIfReviewed = `SELECT Review.reviewed_venue_id, Review.review_author_id From Review WHERE review_author_id = ${currentUser} AND reviewed_venue_id = ${venueId}`
+                            const checkIfReviewed = `SELECT * From Review WHERE review_author_id = ${currentUser} AND reviewed_venue_id = ${venueId}`
                             db.getPool().query(checkIfReviewed, function(err, result) {
                                 if(result.length == 0) {
                                     let timePosted = new Date();
@@ -72,7 +71,7 @@ exports.createReview = async function (token, venueId, reviewValues, done) {
                                         mm='0'+mm;
                                     }
                                     if(dd<10) {
-                                        dd='0'+dd;
+                                        dd='0'+dd;rn
                                     }
                                     if(hh<10) {
                                         hh='0'+hh;
@@ -89,11 +88,11 @@ exports.createReview = async function (token, venueId, reviewValues, done) {
                                     let values = `"${venueId}", "${currentUser}", "${reviewValues.reviewBody}", "${reviewValues.starRating}", "${reviewValues.costRating}", "${timePosted}"`
                                     const sql = `INSERT INTO Review (${fields}) VALUES (${values})`;
                                     db.getPool().query(sql, function(err, result) {
-                                        done(201, "Created", "Created");
+                                        return done(201, "Created", "Created");
                                     });
                                 }
                                 else {
-                                    done(403, "Forbidden", "Forbidden");
+                                    return done(403, "Forbidden", "Forbidden");
                                 }
                             });
                         }
