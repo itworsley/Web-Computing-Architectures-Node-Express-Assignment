@@ -33,4 +33,6 @@ SENG365_MYSQL_DATABASE={your usercode}
 
 1. Open your browser to `http://csse-s365.canterbury.ac.nz/`
 2. Enter the url `csse-s365.canterbury.ac.nz` and your unique `SENG365_PORT` in order to run the API tests on the latest build of your server. 
-3. The test runner will generate a report of the results for you. 
+3. The test runner will generate a report of the results for you.
+
+Tester
