@@ -17,35 +17,42 @@ exports.addPhotoToUser = async function (token, userId, request, done) {
                         return done(403, "Forbidden", "Forbidden");
                     }
 
-                    const buffer = new Buffer.from(request.body).toString("binary");
-                    console.log(buffer);
-                    if (request.headers['content-type']=='image/png') {
-                        fs.writeFile("app/photos/" + userId, buffer, function(err, data) {});
-                    } else if (request.headers['content-type']=='image/jpeg') {
-                        fs.writeFile("app/photos/" + userId, buffer, function(err, data) {});
-                    } else {
-                        return done(400, "Bad Request");
+                    const buffer = new Buffer(request.body);
+                    //console.log(buffer);
+                    const folderPath = "app/photos";
+                    if (!fs.existsSync(folderPath)){
+                        console.log("Directory Created");
+                        fs.mkdirSync(folderPath);
                     }
-                    fs.readFile("app/photos/" + userId, function(err, data) {
-                        const checkUserPhotoSql = `SELECT profile_photo_filename FROM User WHERE user_id = ${userId}`
-                        db.getPool().query(checkUserPhotoSql, function(err, result) {
-                            // If there is no profile photo
-                            if (result[0].profile_photo_filename == null) {
-                                const addPhotoSql = `UPDATE User SET profile_photo_filename = "${data}" WHERE user_id = ${userId}`;
-                                db.getPool().query(addPhotoSql, function(err, result) {
-                                    if (err) return done(404, "Not Found", "Not Found");
-                                    done(201, "Created", "Created");
-                                });
-                            } else {
-                                const updatePhotoSql = `UPDATE User SET profile_photo_filename = "${data}" WHERE user_id = ${userId}`;
-                                db.getPool().query(updatePhotoSql, function(err, result) {
-                                    if (err) return done(404, "Not Found", "Not Found");
-                                    done(200, "OK", "OK");
-                                });
-                            }
-                        });
 
+                    let fileType = "";
+
+                    if (request.headers['content-type']=='image/png') {
+                        fileType = ".png"
+                    } else if (request.headers['content-type']=='image/jpeg') {
+                        fileType = ".jpg"
+                    } else {
+                        return done(400, "Bad Request", "Bad Request");
+                    }
+                    fs.writeFile("app/photos/" + userId + fileType, buffer, function(err, data) {});
+                    const checkUserPhotoSql = `SELECT profile_photo_filename FROM User WHERE user_id = ${userId}`
+                    db.getPool().query(checkUserPhotoSql, function(err, result) {
+                        // If there is no profile photo
+                        if (result[0].profile_photo_filename == null) {
+                            const addPhotoSql = `UPDATE User SET profile_photo_filename = "${userId + fileType}" WHERE user_id = ${userId}`;
+                            db.getPool().query(addPhotoSql, function(err, result) {
+                                if (err) return done(404, "Not Found", "Not Found");
+                                done(201, "Created", "Created");
+                            });
+                        } else {
+                            const updatePhotoSql = `UPDATE User SET profile_photo_filename = "${userId + fileType}" WHERE user_id = ${userId}`;
+                            db.getPool().query(updatePhotoSql, function(err, result) {
+                                if (err) return done(404, "Not Found", "Not Found");
+                                done(200, "OK", "OK");
+                            });
+                        }
                     });
+
                 });
 
             });
@@ -66,8 +73,16 @@ exports.getUserPhoto = async function (userId, request, done) {
                 if (result[0].profile_photo_filename == null) {
                     return done(404, "Not Found", "Not Found");
                 }
+                fs.readFile("app/photos/" + result[0].profile_photo_filename, function(err, data) {
+                    if (err) return done(404, "Not Found", "Not Found");
+                    if (data == null) {
+                        return done(404, "Not Found", "Not Found");
+                    } else {
+                        done(200, "OK", data);
+                    }
+                });
                 //console.log(result);
-                done(200, "OK", result[0].profile_photo_filename);
+                //done(200, "OK", photo);
             });
         }
     });

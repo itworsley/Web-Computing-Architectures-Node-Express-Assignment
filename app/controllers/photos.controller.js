@@ -39,7 +39,7 @@ exports.getUserPhoto = async function(req, res) {
     let userId =  req.params.id;
     Photo.getUserPhoto(userId, req, function(statusCode, statusMessage, result) {
         res.statusMessage = statusMessage;
-        res.status(statusCode).send(result);
+        res.status(statusCode).end(result);
     });
 };
 
