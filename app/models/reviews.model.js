@@ -88,6 +88,7 @@ exports.createReview = async function (token, venueId, reviewValues, done) {
                                     let values = `"${venueId}", "${currentUser}", "${reviewValues.reviewBody}", "${reviewValues.starRating}", "${reviewValues.costRating}", "${timePosted}"`
                                     const sql = `INSERT INTO Review (${fields}) VALUES (${values})`;
                                     db.getPool().query(sql, function(err, result) {
+                                        if(err) return done(400, "Bad Request", "Bad Request");
                                         return done(201, "Created", "Created");
                                     });
                                 }

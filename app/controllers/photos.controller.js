@@ -37,8 +37,9 @@ exports.addPhotoToUser = async function(req, res) {
 
 exports.getUserPhoto = async function(req, res) {
     let userId =  req.params.id;
-    Photo.getUserPhoto(userId, req, function(statusCode, statusMessage, result) {
+    Photo.getUserPhoto(userId, req, function(statusCode, statusMessage, result, fileType) {
         res.statusMessage = statusMessage;
+        res.setHeader('Content-Type', 'image/'+fileType);
         res.status(statusCode).end(result);
     });
 };

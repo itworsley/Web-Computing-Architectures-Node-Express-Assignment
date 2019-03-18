@@ -30,7 +30,7 @@ exports.addPhotoToUser = async function (token, userId, request, done) {
                     if (request.headers['content-type']=='image/png') {
                         fileType = ".png"
                     } else if (request.headers['content-type']=='image/jpeg') {
-                        fileType = ".jpg"
+                        fileType = ".jpeg"
                     } else {
                         return done(400, "Bad Request", "Bad Request");
                     }
@@ -73,12 +73,20 @@ exports.getUserPhoto = async function (userId, request, done) {
                 if (result[0].profile_photo_filename == null) {
                     return done(404, "Not Found", "Not Found");
                 }
+                let fileType = ""
+                if(result[0].profile_photo_filename.includes("jpeg") || result[0].profile_photo_filename.includes("jpg")) {
+                    fileType = "jpeg"
+                } else if (result[0].profile_photo_filename.includes("png")) {
+                    fileType = "png"
+                } else {
+                    return done(404, "Not Found", "Not Found");
+                }
                 fs.readFile("app/photos/" + result[0].profile_photo_filename, function(err, data) {
                     if (err) return done(404, "Not Found", "Not Found");
                     if (data == null) {
                         return done(404, "Not Found", "Not Found");
                     } else {
-                        done(200, "OK", data);
+                        done(200, "OK", data, fileType);
                     }
                 });
                 //console.log(result);
