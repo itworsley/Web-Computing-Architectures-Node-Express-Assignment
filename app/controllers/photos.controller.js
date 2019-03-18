@@ -1,13 +1,24 @@
 const Photo = require('../models/photos.model');
 const fs = require("fs");
+const formidable = require('formidable');
 
 
 exports.addPhotoToVenue = async function(req, res) {
     // Check if all fields are supplied
-    if(req.body.length != 3) {
-        res.statusMessage = "Bad Request";
-        return res.status(400).json();
-    }
+    //console.log(req);
+    // let form = new formidable.IncomingForm();
+    // form.parse(req, function(err, fields, files) {
+    //     if (Object.keys(fields).length != 2) {
+    //         res.statusMessage = "Bad Request";
+    //         res.status(400).send("Bad Request");
+    //     } else {
+    //         form.on('end', function(fields, files) {
+    //             const temp_path = this.openedFiles[0].path;
+    //             const file_name = this.openedFiles[0].name;
+    //             console.log(file_name);
+    //         })
+    //     }
+    // });
     let token = req.header("X-Authorization");
     let venueId =  req.params.id;
     if (!req.header("X-Authorization")) {
@@ -19,6 +30,26 @@ exports.addPhotoToVenue = async function(req, res) {
             res.status(statusCode).send(result);
         });
     }
+    // new formidable.IncomingForm().parse(req, (err, fields, files) => {
+    //     if (Object.keys(fields).length != 2) {
+    //         res.statusMessage = "Bad Request";
+    //         res.status(400).send("Bad Request");
+    //     } else {
+    //         let description = Object.values(fields)[0];
+    //         let makePrimary = Object.values(fields)[1];
+    //         let token = req.header("X-Authorization");
+    //         let venueId =  req.params.id;
+    //         if (!req.header("X-Authorization")) {
+    //             res.statusMessage = "Unauthorized";
+    //             return res.status(401).send("Unauthorized");
+    //         } else {
+    //             Photo.addPhotoToVenue(token, venueId, req, function (statusCode, statusMessage, result) {
+    //                 res.statusMessage = statusMessage;
+    //                 res.status(statusCode).send(result);
+    //             });
+    //         }
+    //     }
+    // });
 };
 
 exports.addPhotoToUser = async function(req, res) {
