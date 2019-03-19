@@ -40,8 +40,8 @@ exports.addPhotoToUser = async function (token, userId, request, done) {
                         return done(400, "Bad Request", "Bad Request");
                     }
 
-                    const newFilePath = 'app/photos/users/user';
-                    let newFileName = userId + fileType;
+                    const newFilePath = 'app/photos/users/';
+                    let newFileName = "user" + userId + fileType;
 
                     fs.writeFile(newFilePath + newFileName, buffer, function(err, data) {});
                     const checkUserPhotoSql = `SELECT profile_photo_filename FROM User WHERE user_id = ${userId}`
@@ -74,30 +74,35 @@ exports.getUserPhoto = async function (userId, request, done) {
     const checkUserSql = `SELECT * From User WHERE user_id = "${userId}"`;
     db.getPool().query(checkUserSql, function(err, result) {
         if (result.length == 0) {
+            console.log("HEREB");
             return done(404, "Not Found", "Not Found");
         } else {
             const sql = `SELECT profile_photo_filename FROM User WHERE user_id = "${userId}"`;
             db.getPool().query(sql, function(err, result) {
-                if (err) return done(404, "Not Found", "Not Found");
-                if (result[0].profile_photo_filename == null) {
+                if (err) {
                     return done(404, "Not Found", "Not Found");
-                }
-                let fileType = ""
-                if(result[0].profile_photo_filename.includes("jpeg") || result[0].profile_photo_filename.includes("jpg")) {
-                    fileType = "jpeg"
-                } else if (result[0].profile_photo_filename.includes("png")) {
-                    fileType = "png"
                 } else {
-                    return done(404, "Not Found", "Not Found");
-                }
-                fs.readFile("app/photos/users/" + result[0].profile_photo_filename, function(err, data) {
-                    if (err) return done(404, "Not Found", "Not Found");
-                    if (data == null) {
+                    if (result[0].profile_photo_filename == null) {
                         return done(404, "Not Found", "Not Found");
-                    } else {
-                        done(200, "OK", data, fileType);
                     }
-                });
+                    let fileType = "";
+                    if(result[0].profile_photo_filename.includes("jpeg") || result[0].profile_photo_filename.includes("jpg")) {
+                        fileType = "jpeg"
+                    } else if (result[0].profile_photo_filename.includes("png")) {
+                        fileType = "png"
+                    } else {
+                        return done(404, "Not Found", "Not Found");
+                    }
+                    fs.readFile("app/photos/users/" + result[0].profile_photo_filename, function(err, data) {
+                        if (err) return done(404, "Not Found", "NOT FOUND");
+                        if (data == null) {
+                            return done(404, "Not Found", "Not Found");
+                        } else {
+                            done(200, "OK", data, fileType);
+                        }
+                    });
+                }
+
             });
         }
     });
