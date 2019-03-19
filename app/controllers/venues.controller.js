@@ -38,27 +38,11 @@ exports.getAllVenues = function (req, res) {
  * @returns {Promise<void>}
  */
 exports.getSingleVenue = async function (req, res) {
-    const sqlCommand = String(req.body);
     const id = req.params.id;
-    const results = await Venue.getSingleVenue(id, sqlCommand);
-    if (results.length > 0) {
-        const venue = results[0].venue_name;
-        const admin_id = results[0].admin_id;
-        const username = results[0].username;
-
-        const json_result = {"venueName": venue.toString(), "admin": {"userId": admin_id, "username": username.toString()},
-        "category":{"categoryId": results[0].category_id, "categoryName": results[0].category_name.toString(), "categoryDescription": results[0].category_description.toString()},
-        "city": results[0].city.toString(), "shortDescription": results[0].short_description.toString(), "longDescription": results[0].long_description.toString(),
-        "dateAdded": results[0].date_added, "address": results[0].address.toString(), "latitude": results[0].latitude, "longitude": results[0].longitude};
-
-        res.statusMessage = 'OK';
-        res.status(200)
-            .json(json_result);
-    } else if (results.length == 0) {
-        res.statusMessage = 'Not Found';
-        res.status(404)
-            .send();
-    }
+    Venue.getSingleVenue(id, function(statusCode, statusMessage, result)  {
+        res.statusMessage = statusMessage;
+        res.status(statusCode).send(result);
+    });
 };
 
 exports.createVenue = async function (req, res) {

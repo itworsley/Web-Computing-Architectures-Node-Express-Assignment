@@ -203,7 +203,6 @@ exports.addPhotoToVenue = async function (token, venueId, req, done) {
 
                                     const checkSql = `SELECT * FROM VenuePhoto WHERE venue_id = ${venueId} AND is_primary = 1`;
                                     db.getPool().query(checkSql, function (err, result) {
-                                        console.log(checkSql);
                                         if (result.length == 0) {
                                             const sqlQuery = `INSERT INTO VenuePhoto (venue_id, photo_filename, photo_description, is_primary) VALUES (${venueId}, "${newFileName}", "${description}", 1)`;
                                             db.getPool().query(sqlQuery, function (err) {

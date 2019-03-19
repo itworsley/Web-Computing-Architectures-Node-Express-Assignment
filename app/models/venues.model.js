@@ -2,9 +2,10 @@ const db = require('../../config/db');
 const help = require('../lib/helpers');
 
 exports.getAllVenues = async function (searchParams, done) {
-    let sqlStart = `SELECT DISTINCT Initial.venue_id, Initial.venue_name, Initial.category_id, Initial.city,Initial.short_description, Initial.latitude, Initial.longitude, Initial.meanStarRating, Initial.modeCostRating `;
+    let sqlStart = `SELECT DISTINCT Initial.venue_id, Initial.venue_name, Initial.category_id, Initial.city,Initial.short_description, Initial.latitude, Initial.longitude, Initial.meanStarRating, Initial.modeCostRating, Initial.primaryPhoto `;
     let sqlStatement1 = ` FROM (SELECT Venue.venue_id, Venue.venue_name, Venue.admin_id, Venue.category_id, Venue.city, Venue.short_description, Venue.latitude, Venue.longitude, `+
-        `Review.star_rating, Review.cost_rating, (SELECT AVG(Review.star_rating) FROM Review WHERE Review.reviewed_venue_id = Venue.venue_id) AS meanStarRating,` +
+        `Review.star_rating, Review.cost_rating, (SELECT VenuePhoto.photo_filename FROM VenuePhoto WHERE VenuePhoto.venue_id = Venue.venue_id AND VenuePhoto.is_primary = 1) AS primaryPhoto, ` +
+        `(SELECT AVG(Review.star_rating) FROM Review WHERE Review.reviewed_venue_id = Venue.venue_id) AS meanStarRating,` +
         `(SELECT DISTINCT ModeCostRating.mode_cost_rating FROM ModeCostRating WHERE ModeCostRating.venue_id = Venue.venue_id ORDER BY ModeCostRating.mode_cost_rating DESC LIMIT 1) AS modeCostRating `;
     if (searchParams['myLatitude'] && searchParams['myLongitude']) {
         if(help.checkLatLong(searchParams['myLatitude'], searchParams['myLongitude'])) {
@@ -91,14 +92,14 @@ exports.getAllVenues = async function (searchParams, done) {
                 const json_result = {
                     "venueId": result[i].venue_id, "venueName": result[i].venue_name, "categoryId": result[i].category_id, "city": result[i].city,
                     "shortDescription": result[i].short_description, "latitude": result[i].latitude, "longitude": result[i].longitude,
-                    "meanStarRating": result[i].meanStarRating, "modeCostRating": result[i].modeCostRating, "distance": result[i].distance
+                    "meanStarRating": result[i].meanStarRating, "modeCostRating": result[i].modeCostRating, "primaryPhoto": result[i].primaryPhoto, "distance": result[i].distance
                 };
                 list.push(json_result);
             } else {
                 const json_result = {
                     "venueId": result[i].venue_id, "venueName": result[i].venue_name, "categoryId": result[i].category_id, "city": result[i].city,
                     "shortDescription": result[i].short_description, "latitude": result[i].latitude, "longitude": result[i].longitude,
-                    "meanStarRating": result[i].meanStarRating, "modeCostRating": result[i].modeCostRating
+                    "meanStarRating": result[i].meanStarRating, "modeCostRating": result[i].modeCostRating, "primaryPhoto": result[i].primaryPhoto
                 };
                 list.push(json_result);
             }
@@ -108,13 +109,34 @@ exports.getAllVenues = async function (searchParams, done) {
 
 };
 
-exports.getSingleVenue = async function(venueId) {
-    try {
-        return await db.getPool().query("SELECT Venue.venue_name, Venue.admin_id, User.username, Venue.category_id, VenueCategory.category_name, VenueCategory.category_description, Venue.city, Venue.short_description, Venue.long_description, Venue.date_added, Venue.address, Venue.latitude, Venue.longitude FROM Venue LEFT JOIN User ON (Venue.admin_id = User.user_id) LEFT JOIN VenueCategory ON (Venue.category_id = VenueCategory.category_id) WHERE venue_id = ?", venueId);
-    } catch (err) {
-        console.log(err);
-        return(err);
-    }
+exports.getSingleVenue = async function(venueId, done) {
+    let sql = `SELECT Venue.venue_name, Venue.admin_id, User.username, Venue.category_id, VenueCategory.category_name, VenueCategory.category_description, Venue.city, Venue.short_description, Venue.long_description, Venue.date_added, Venue.address, Venue.latitude, Venue.longitude FROM Venue LEFT JOIN User ON (Venue.admin_id = User.user_id) LEFT JOIN VenueCategory ON (Venue.category_id = VenueCategory.category_id) WHERE venue_id = ${venueId}`;
+    db.getPool().query(sql, function(err, result) {
+        if (result.length == 0) {
+            return done(404, "Not Found", "Not Found");
+        } else {
+            const sqlPhoto = `SELECT * FROM VenuePhoto WHERE VenuePhoto.venue_id = ${venueId} `
+            db.getPool().query(sqlPhoto, function(err, res) {
+                let photos = [];
+                for (let i = 0; i < res.length; i++) {
+                    let primary;
+                    if (res[i].is_primary == "1") {
+                        primary = true;
+                    } else if (res[i].is_primary == "0") {
+                        primary = false;
+                    }
+                    let photos_json = {"photoFilename": res[i].photo_filename, "photoDescription": res[i].photo_description, "isPrimary": primary}
+                    photos.push(photos_json);
+                }
+                let json_result = {"venueName": result[0].venue_name, "admin": {"userId": result[0].admin_id, "username": result[0].username},
+                    "category":{"categoryId": result[0].category_id, "categoryName": result[0].category_name.toString(), "categoryDescription": result[0].category_description.toString()},
+                    "city": result[0].city.toString(), "shortDescription": result[0].short_description.toString(), "longDescription": result[0].long_description.toString(),
+                    "dateAdded": result[0].date_added, "address": result[0].address.toString(), "latitude": result[0].latitude, "longitude": result[0].longitude, "photos": photos};
+                return done(200, "OK", json_result);
+            });
+        }
+
+    });
 };
 
 exports.createVenue = async function (token, venueValues, done) {
