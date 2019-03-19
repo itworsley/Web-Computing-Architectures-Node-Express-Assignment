@@ -4,21 +4,6 @@ const formidable = require('formidable');
 
 
 exports.addPhotoToVenue = async function(req, res) {
-    // Check if all fields are supplied
-    //console.log(req);
-    // let form = new formidable.IncomingForm();
-    // form.parse(req, function(err, fields, files) {
-    //     if (Object.keys(fields).length != 2) {
-    //         res.statusMessage = "Bad Request";
-    //         res.status(400).send("Bad Request");
-    //     } else {
-    //         form.on('end', function(fields, files) {
-    //             const temp_path = this.openedFiles[0].path;
-    //             const file_name = this.openedFiles[0].name;
-    //             console.log(file_name);
-    //         })
-    //     }
-    // });
     let token = req.header("X-Authorization");
     let venueId =  req.params.id;
     if (!req.header("X-Authorization")) {
@@ -30,26 +15,6 @@ exports.addPhotoToVenue = async function(req, res) {
             res.status(statusCode).send(result);
         });
     }
-    // new formidable.IncomingForm().parse(req, (err, fields, files) => {
-    //     if (Object.keys(fields).length != 2) {
-    //         res.statusMessage = "Bad Request";
-    //         res.status(400).send("Bad Request");
-    //     } else {
-    //         let description = Object.values(fields)[0];
-    //         let makePrimary = Object.values(fields)[1];
-    //         let token = req.header("X-Authorization");
-    //         let venueId =  req.params.id;
-    //         if (!req.header("X-Authorization")) {
-    //             res.statusMessage = "Unauthorized";
-    //             return res.status(401).send("Unauthorized");
-    //         } else {
-    //             Photo.addPhotoToVenue(token, venueId, req, function (statusCode, statusMessage, result) {
-    //                 res.statusMessage = statusMessage;
-    //                 res.status(statusCode).send(result);
-    //             });
-    //         }
-    //     }
-    // });
 };
 
 exports.addPhotoToUser = async function(req, res) {
@@ -75,6 +40,21 @@ exports.getUserPhoto = async function(req, res) {
     });
 };
 
+exports.getVenuePhoto = async function(req, res) {
+    if (!(req.params.id && req.params.photoFilename)) {
+        res.statusMessage = "Not Found";
+        res.status(404).send("Not Found");
+    } else {
+        let venueId =  req.params.id;
+        let fileName = req.params.photoFilename;
+        Photo.getVenuePhoto(venueId, fileName, function(statusCode, statusMessage, result, fileType) {
+            res.statusMessage = statusMessage;
+            res.setHeader('Content-Type', 'image/'+fileType);
+            res.status(statusCode).end(result);
+        });
+    }
+};
+
 exports.deleteUserPhoto = async function(req, res) {
     let token = req.header("X-Authorization");
     if (!req.header("X-Authorization")) {
@@ -83,6 +63,36 @@ exports.deleteUserPhoto = async function(req, res) {
     } else {
         let userId = req.params.id;
         Photo.deleteUserPhoto(token, userId, function (statusCode, statusMessage) {
+            res.statusMessage = statusMessage;
+            res.status(statusCode).send(statusMessage);
+        });
+    }
+};
+
+exports.deleteVenuePhoto = async function(req, res) {
+    let token = req.header("X-Authorization");
+    if (!req.header("X-Authorization")) {
+        res.statusMessage = "Unauthorized";
+        return res.status(401).send("Unauthorized");
+    } else {
+        let venueId = req.params.id;
+        let fileName = req.params.photoFilename;
+        Photo.deleteVenuePhoto(token, venueId, fileName,function (statusCode, statusMessage) {
+            res.statusMessage = statusMessage;
+            res.status(statusCode).send(statusMessage);
+        });
+    }
+};
+
+exports.setPrimary = async function(req, res) {
+    let token = req.header("X-Authorization");
+    if (!req.header("X-Authorization")) {
+        res.statusMessage = "Unauthorized";
+        return res.status(401).send("Unauthorized");
+    } else {
+        let venueId = req.params.id;
+        let fileName = req.params.photoFilename;
+        Photo.setPrimary(token, venueId, fileName,function (statusCode, statusMessage) {
             res.statusMessage = statusMessage;
             res.status(statusCode).send(statusMessage);
         });
