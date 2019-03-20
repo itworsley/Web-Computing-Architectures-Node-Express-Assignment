@@ -53,7 +53,7 @@ exports.getSingleUser = async function(userId, token, done) {
  * @returns {Promise<*>}
  */
 exports.createUser = async function (userData, done) {
-    const username = userData.username.toString();
+    const username = userData.username;
     const email = userData.email;
     const givenName = userData.givenName;
     const familyName = userData.familyName;
