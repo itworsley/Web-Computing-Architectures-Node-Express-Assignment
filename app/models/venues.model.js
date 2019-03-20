@@ -7,17 +7,17 @@ exports.getAllVenues = async function (searchParams, done) {
         `Review.star_rating, Review.cost_rating, (SELECT VenuePhoto.photo_filename FROM VenuePhoto WHERE VenuePhoto.venue_id = Venue.venue_id AND VenuePhoto.is_primary = 1) AS primaryPhoto, ` +
         `(SELECT AVG(Review.star_rating) FROM Review WHERE Review.reviewed_venue_id = Venue.venue_id) AS meanStarRating,` +
         `(SELECT DISTINCT ModeCostRating.mode_cost_rating FROM ModeCostRating WHERE ModeCostRating.venue_id = Venue.venue_id ORDER BY ModeCostRating.mode_cost_rating DESC LIMIT 1) AS modeCostRating `;
-    if (searchParams['myLatitude'] && searchParams['myLongitude']) {
+    if (searchParams['myLatitude'] || searchParams['myLongitude']) {
         if(help.checkLatLong(searchParams['myLatitude'], searchParams['myLongitude'])) {
             return done(400, "Bad Request", "Bad Request");
         } else {
             sqlStart += ', Initial.distance';
-            sqlStatement1 += `, 111.111 *
+            sqlStatement1 += `, ROUND(111.111 *
              DEGREES(ACOS(LEAST(COS(RADIANS(Venue.latitude))
              * COS(RADIANS(${searchParams['myLatitude']}))
              * COS(RADIANS(Venue.longitude - ${searchParams['myLongitude']}))
              + SIN(RADIANS(Venue.latitude))
-             * SIN(RADIANS(${searchParams['myLatitude']})), 1.0))) AS distance `
+             * SIN(RADIANS(${searchParams['myLatitude']})), 1.0))), 3) AS distance `
         }
 
     }
@@ -30,13 +30,22 @@ exports.getAllVenues = async function (searchParams, done) {
         sqlStatement2 += ` AND Initial.venue_name LIKE CONCAT("%${searchParams['q']}%")`;
     }
     if (searchParams['categoryId']) {
-        sqlStatement2 += ` AND Initial.category_id = "${searchParams['categoryId']}"`;
+        if (isNaN(searchParams['categoryId'])) {
+            return done(400, "Bad Request", "Bad Request");
+        } else {
+            sqlStatement2 += ` AND Initial.category_id = "${searchParams['categoryId']}"`;
+        }
     }
     if (searchParams['adminId']) {
-        sqlStatement2 += ` AND Initial.admin_id = "${searchParams['adminId']}"`;
+        if (isNaN(searchParams['adminId'])) {
+            return done(400, "Bad Request", "Bad Request");
+        } else {
+            sqlStatement2 += ` AND Initial.admin_id = "${searchParams['adminId']}"`;
+        }
+
     }
     if (searchParams['minStarRating']) {
-        if (searchParams['minStarRating'] >=0 && searchParams['minStarRating']<=5) {
+        if (searchParams['minStarRating'] >=1 && searchParams['minStarRating']<=5) {
             sqlStatement2 += ` AND Initial.meanStarRating >= "${searchParams['minStarRating']}"`;
         } else {
             return done(400, "Bad Request", "Bad Request");
@@ -44,40 +53,60 @@ exports.getAllVenues = async function (searchParams, done) {
 
     }
     if (searchParams['maxCostRating']) {
-        if (searchParams['maxCostRating'] >=0 && searchParams['maxCostRating']<=5) {
+        if (searchParams['maxCostRating'] >=0 && searchParams['maxCostRating']<=4) {
             sqlStatement2 += ` AND Initial.modeCostRating <= "${searchParams['maxCostRating']}"`;
         } else {
             return done(400, "Bad Request", "Bad Request");
         }
 
     }
-
-    if (searchParams['sortBy']) {
-        let order = 'DESC';
-        if (searchParams['reverseSort'] === 'true') {
-            order = 'ASC';
+    //console.log(searchParams['reverseSort'] === 'false');
+    //console.log(typeof(searchParams['sortBy']));
+    if (searchParams['sortBy'] || (searchParams['sortBy'] !== undefined)) {
+        let order = 'ASC';
+        if (searchParams['reverseSort']) {
+            if (searchParams['reverseSort'] === 'true' || searchParams['reverseSort'] === 'false') {
+                if (searchParams['reverseSort'] === 'true') {
+                    order = 'DESC';
+                } else {
+                    order = 'ASC';
+                }
+            } else {
+                return done(400, "Bad Request", "Bad Request");
+            }
         }
         if (searchParams['sortBy'] == 'DISTANCE') {
             if (!((searchParams['myLatitude']) && searchParams['myLongitude'])) {
-                return done(404, "Bad Request", "Bad Request");
+                return done(400, "Bad Request", "Bad Request");
             } else {
-                let dorder = 'ASC';
-                if (searchParams['reverseSort'] == 'true') {
-                    dorder = 'DESC';
-                }
-                sqlStatement2 += ` ORDER BY Initial.${searchParams['sortBy']} ${dorder}`;
+                sqlStatement2 += ` ORDER BY Initial.${searchParams['sortBy']} ${order}`;
             }
         } else if (searchParams['sortBy'] == 'COST_RATING') {
             sqlStatement2 += ` ORDER BY Initial.modeCostRating ${order}`;
+        } else if (searchParams['sortBy'] == 'STAR_RATING'){
+            let dorder = 'DESC';
+            if (searchParams['reverseSort'] == 'true') {
+                dorder = 'ASC';
+            } else {
+                sqlStatement2 += ` ORDER BY Initial.meanStarRating ${dorder}`;
+            }
         } else {
-            sqlStatement2 += ` ORDER BY Initial.meanStarRating ${order}`;
+            return done(400, "Bad Request", "Bad Request");
         }
     }
     let sqlStatement = sqlStart + sqlStatement1 + sqlStatement2;
     if (searchParams['sortBy'] == undefined) {
         let order = 'DESC';
-        if (searchParams['reverseSort'] === 'true') {
-            order = 'ASC';
+        if (searchParams['reverseSort']) {
+            if (searchParams['reverseSort'] === 'true' || searchParams['reverseSort'] === 'false') {
+                if (searchParams['reverseSort'] === 'true') {
+                    order = 'ASC';
+                } else {
+                    order = 'DESC';
+                }
+            } else {
+                return done(400, "Bad Request", "Bad Request");
+            }
         }
         sqlStatement += ` ORDER BY Initial.meanStarRating ${order}`;
     }
@@ -91,9 +120,8 @@ exports.getAllVenues = async function (searchParams, done) {
     if (!searchParams['startIndex'] && searchParams['count']) {
         sqlStatement += ` LIMIT ${searchParams['count']}`;
     }
-
     db.getPool().query(sqlStatement, function (err, result) {
-        if (err) return done(404, "Bad Request", "Bad Request");
+        if (err) return done(400, "Bad Request", "Bad Request");
         const list = [];
         for (let i = 0; i < result.length; i++) {
             if (searchParams['myLatitude'] && searchParams['myLongitude']) {
@@ -198,66 +226,104 @@ exports.updateVenue = function (token, venueId, venueValues, done) {
                     if (!(venueAdmin == currentUser)) {
                         return done(403, "Forbidden", "Forbidden");
                     } else {
+                        let venueName = venueValues['venueName'];
+                        let categoryId = venueValues['categoryId'];
+                        let city = venueValues['city'];
+                        let shortDescription = venueValues['shortDescription'];
+                        let longDescription = venueValues['longDescription'];
+                        let address = venueValues['address'];
+
                         let values = '';
                         let isEmpty = true;
-                        if (venueValues['venueName']) {
+                        if (venueName || (/^\s*$/.test(venueName))) {
+                            if(/^\s*$/.test(venueName)) {
+                                return done(400, "Bad Request", "Bad Request")
+                            } else {
+                                if (!isEmpty) {
+                                    values = values + ", ";
+                                }
+                                values = values + `venue_name = "${venueName}"`;
+                                isEmpty = false;
+                            }
+
+                        }
+                        if (categoryId) {
                             if (!isEmpty) {
                                 values = values + ", ";
                             }
-                            values = values + `venue_name = "${venueValues.venueName}"`;
+                            values = values + `category_id = "${categoryId}"`;
                             isEmpty = false;
                         }
-                        if (venueValues['categoryId']) {
-                            if (!isEmpty) {
-                                values = values + ", ";
+                        if (city || (/^\s*$/.test(city))) {
+                            if(/^\s*$/.test(city)) {
+                                return done(400, "Bad Request", "Bad Request")
+                            } else {
+                                if (!isEmpty) {
+                                    values = values + ", ";
+                                }
+                                values = values + `city = "${city}"`;
+                                isEmpty = false;
                             }
-                            values = values + `category_id = "${venueValues.categoryId}"`;
-                            isEmpty = false;
                         }
-                        if (venueValues['city']) {
-                            if (!isEmpty) {
-                                values = values + ", ";
+                        if (shortDescription || (/^\s*$/.test(shortDescription))) {
+                            if(/^\s*$/.test(shortDescription)) {
+                                return done(400, "Bad Request", "Bad Request")
+                            } else {
+                                if (!isEmpty) {
+                                    values = values + ", ";
+                                }
+                                values = values + `short_description = "${shortDescription}"`;
+                                isEmpty = false;
                             }
-                            values = values + `city = "${venueValues.city}"`;
-                            isEmpty = false;
                         }
-                        if (venueValues['shortDescription']) {
-                            if (!isEmpty) {
-                                values = values + ", ";
+                        if (longDescription || (/^\s*$/.test(longDescription))) {
+                            if(/^\s*$/.test(longDescription)) {
+                                return done(400, "Bad Request", "Bad Request")
+                            } else {
+                                if (!isEmpty) {
+                                    values = values + ", ";
+                                }
+                                values = values + `long_description = "${longDescription}"`;
+                                isEmpty = false;
                             }
-                            values = values + `short_description = "${venueValues.shortDescription}"`;
-                            isEmpty = false;
                         }
-                        if (venueValues['longDescription']) {
-                            if (!isEmpty) {
-                                values = values + ", ";
+                        if (address || (/^\s*$/.test(address))) {
+                            if(/^\s*$/.test(address)) {
+                                return done(400, "Bad Request", "Bad Request")
+                            } else {
+                                if (!isEmpty) {
+                                    values = values + ", ";
+                                }
+                                values = values + `address = "${address}"`;
+                                isEmpty = false;
                             }
-                            values = values + `long_description = "${venueValues.longDescription}"`;
-                            isEmpty = false;
-                        }
-                        if (venueValues['address']) {
-                            if (!isEmpty) {
-                                values = values + ", ";
-                            }
-                            values = values + `address = "${venueValues.address}"`;
-                            isEmpty = false;
                         }
                         if ((venueValues['latitude']) || (venueValues['latitude'] == 0)) {
-                            if (!isEmpty) {
-                                values = values + ", ";
+                            if((venueValues['latitude']) < -90 || (venueValues['latitude']) > 90) {
+                                return done(400, "Bad Request", "Bad Request")
+                            } else {
+                                if (!isEmpty) {
+                                    values = values + ", ";
+                                }
+                                values = values + `latitude = "${venueValues.latitude}"`;
+                                isEmpty = false;
                             }
-                            values = values + `latitude = "${venueValues.latitude}"`;
-                            isEmpty = false;
+
                         }
                         if (venueValues['longitude'] || (venueValues['longitude'] == 0)) {
-                            if (!isEmpty) {
-                                values = values + ", ";
+                            if (venueValues['longitude'] < -180 || venueValues['longitude'] > 180) {
+                                return done(400, "Bad Request", "Bad Request")
+                            } else {
+                                if (!isEmpty) {
+                                    values = values + ", ";
+                                }
+                                values = values + `longitude = "${venueValues.longitude}"`;
                             }
-                            values = values + `longitude = "${venueValues.longitude}"`;
+
                         }
                         const sql = `UPDATE Venue SET ${values} WHERE venue_id = "${venueId}"`;
                         db.getPool().query(sql, function(err, result) {
-                            if (err) return done(500, "Internal server error");
+                            if (err) return done(400, "Bad Request");
                             done(200, "OK", "OK");
                         });
                     }
@@ -277,5 +343,3 @@ exports.getCategories = async function () {
     }
 
 };
-
-//(SELECT 111.111 * DEGREES(ACOS(LEAST(COS(RADIANS(Initial.latitude)) * COS(RADIANS(-45)) * COS(RADIANS(Initial.longitude - 170)) + SIN(RADIANS(Initial.latitude)) * SIN(RADIANS(170)), 1.0)))) AS distance

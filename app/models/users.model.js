@@ -52,15 +52,50 @@ exports.getSingleUser = async function(userId, token, done) {
  * @param user
  * @returns {Promise<*>}
  */
-exports.createUser = async function (user) {
-    let values = [user];
-    try {
-        return await db.getPool().query('INSERT INTO User (username, email, given_name, family_name, password) VALUES ?', values)
-    } catch (err) {
-        if (err && (err.code === 'ER_DUP_ENTRY')) return (400, "Bad Request", "Bad Request");
-        console.log(err);
-        return (err);
+exports.createUser = async function (userData, done) {
+    const username = userData.username.toString();
+    const email = userData.email;
+    const givenName = userData.givenName;
+    const familyName = userData.familyName;
+    const password = userData.password;
+    let re = /[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}/igm;
+    //console.log(username, email, givenName, familyName, password);
+    //console.log(!username || !(/^\s*$/.test(username)));
+    if (!username || (/^\s*$/.test(username))) {
+        return done(400, "Bad Request", "Username");
     }
+    if (!re.test(email)) {
+        return done(400, "Bad Request", "Email");
+    }
+    if (!givenName || (/^\s*$/.test(givenName))) {
+        return done(400, "Bad Request", "Given Name");
+    }
+    if (!familyName || (/^\s*$/.test(familyName))) {
+        return done(400, "Bad Request", "Family Name");
+    }
+    if (!password || (/^\s*$/.test(password))) {
+        return done(400, "Bad Request", "Password");
+    }
+    //const values = [[username, email, givenName, familyName, password]];
+    const checkUserSql = `SELECT * FROM User WHERE username = "${username}"`;
+    db.getPool().query(checkUserSql, function(err, result) {
+        if (result.length !== 0) {
+            return done(400, "Bad Request", "User already exists");
+        }
+        else {
+            const hashPassword = passwordHash.generate(password);
+            const addUserSql = `INSERT INTO User (username, email, given_name, family_name, password) VALUES ("${username}", "${email}", "${givenName}", "${familyName}", "${hashPassword}")`;
+            db.getPool().query(addUserSql, function(err, result) {
+                if (err) return done(400, "Bad request", "Bad request");
+                const conditions = `SELECT user_id FROM User WHERE username = "${username}"`
+                db.getPool().query(conditions, function(err, result) {
+                    if (err) return done(400, "Bad request", "Bad request");
+                    const userId = result[0].user_id;
+                    return done(201, "Created", {"userId": userId});
+                });
+            });
+        }
+    });
 };
 
 exports.checkUserExists = async function (user) {
