@@ -30,8 +30,8 @@ exports.createUser = async function (req, res) {
     const sqlCommand = String(req.body);
     if (!(req.body.username) || !(req.body.email) || (req.body.email.length === 0) || !(req.body.givenName) || !(req.body.familyName) || !(req.body.password) ) {
         res.statusMessage = 'Bad Request';
-        res.status(400)
-            .send("YYY");
+        res.status(405)
+            .send();
     } else {
         const user_data = {
             "username": req.body.username, "email": req.body.email, "given_name": req.body.givenName,
@@ -67,13 +67,6 @@ exports.createUser = async function (req, res) {
 
         }
     }
-    // if (req.body.username && req.body.email !== undefined && req.body.givenName && req.body.familyName && req.body.password) {
-    //
-    // } else {
-    //     res.statusMessage = 'Bad Request';
-    //     res.status(400)
-    //         .send("YYY");
-    // }
 };
 
 exports.updateUser = async function (req, res) {
