@@ -59,6 +59,10 @@ exports.createReview = async function (req, res) {
             res.statusMessage = "Bad Request";
             return res.status(400).send("Bad Request");
         }
+        if (isNaN(req.body.starRating) || isNaN(req.body.costRating)) {
+            res.statusMessage = "Bad Request";
+            return res.status(400).send("Bad Request");
+        }
 
         const starDecimal = (req.body.starRating - Math.floor(req.body.starRating)) !== 0;
         const costDecimal = (req.body.costRating - Math.floor(req.body.costRating)) !== 0;
@@ -73,7 +77,7 @@ exports.createReview = async function (req, res) {
         }
         Review.createReview(token, id, req.body,function(statusCode, statusMessage) {
             res.statusMessage = statusMessage;
-            res.status(statusCode).send();
+            return res.status(statusCode).end(statusMessage);
         })
     }
 

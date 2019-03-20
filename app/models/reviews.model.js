@@ -71,7 +71,7 @@ exports.createReview = async function (token, venueId, reviewValues, done) {
                                         mm='0'+mm;
                                     }
                                     if(dd<10) {
-                                        dd='0'+dd;rn
+                                        dd='0'+dd;
                                     }
                                     if(hh<10) {
                                         hh='0'+hh;
@@ -88,8 +88,12 @@ exports.createReview = async function (token, venueId, reviewValues, done) {
                                     let values = `"${venueId}", "${currentUser}", "${reviewValues.reviewBody}", "${reviewValues.starRating}", "${reviewValues.costRating}", "${timePosted}"`
                                     const sql = `INSERT INTO Review (${fields}) VALUES (${values})`;
                                     db.getPool().query(sql, function(err, result) {
-                                        if(err) return done(400, "Bad Request", "Bad Request");
-                                        return done(201, "Created", "Created");
+                                        if(err) {
+                                            return done(400, "Bad Request", "Bad Request");
+                                        } else {
+                                            return done(201, "Created", "Created");
+                                        }
+
                                     });
                                 }
                                 else {

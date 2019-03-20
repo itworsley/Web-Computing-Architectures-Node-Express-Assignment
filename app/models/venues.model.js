@@ -61,7 +61,11 @@ exports.getAllVenues = async function (searchParams, done) {
             if (!((searchParams['myLatitude']) && searchParams['myLongitude'])) {
                 return done(404, "Bad Request", "Bad Request");
             } else {
-                sqlStatement2 += ` ORDER BY Initial.${searchParams['sortBy']} ${order}`;
+                let dorder = 'ASC';
+                if (searchParams['reverseSort'] == 'true') {
+                    dorder = 'DESC';
+                }
+                sqlStatement2 += ` ORDER BY Initial.${searchParams['sortBy']} ${dorder}`;
             }
         } else if (searchParams['sortBy'] == 'COST_RATING') {
             sqlStatement2 += ` ORDER BY Initial.modeCostRating ${order}`;
@@ -84,6 +88,7 @@ exports.getAllVenues = async function (searchParams, done) {
             sqlStatement += ` LIMIT ${searchParams['startIndex']}, 99999999999 `;
         }
     }
+    if (searchParams['startIndex'])
     db.getPool().query(sqlStatement, function (err, result) {
         if (err) return done(404, "Bad Request", "Bad Request");
         const list = [];
