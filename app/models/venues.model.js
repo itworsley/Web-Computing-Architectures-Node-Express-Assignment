@@ -88,7 +88,11 @@ exports.getAllVenues = async function (searchParams, done) {
             sqlStatement += ` LIMIT ${searchParams['startIndex']}, 99999999999 `;
         }
     }
-    if (searchParams['startIndex'])
+    if (!searchParams['startIndex'] && searchParams['count']) {
+        sqlStatement += `LIMIT ${searchParams['count']}`;
+        console.log(sqlStatement);
+    }
+
     db.getPool().query(sqlStatement, function (err, result) {
         if (err) return done(404, "Bad Request", "Bad Request");
         const list = [];
