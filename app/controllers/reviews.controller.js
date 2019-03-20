@@ -73,7 +73,7 @@ exports.createReview = async function (req, res) {
         }
         Review.createReview(token, id, req.body,function(statusCode, statusMessage) {
             res.statusMessage = statusMessage;
-            res.status(statusCode).send();
+            return res.status(statusCode).send(statusMessage);
         })
     }
 
