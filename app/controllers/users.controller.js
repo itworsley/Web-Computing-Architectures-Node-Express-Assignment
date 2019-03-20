@@ -28,10 +28,11 @@ exports.getSingleUser = async function (req, res) {
 
 exports.createUser = async function (req, res) {
     const sqlCommand = String(req.body);
-    if (!(req.body.username) || !(req.body.email) || (req.body.email.length === 0) || !(req.body.givenName) || !(req.body.familyName) || !(req.body.password) ) {
+    //console.log((!(req.body.email)) ^ (req.body.email.length === 0));
+    if (!(req.body.username) || !(req.body.email) || !(req.body.givenName) || !(req.body.familyName) || !(req.body.password) ) {
         res.statusMessage = 'Bad Request';
-        res.status(405)
-            .send();
+        res.status(400)
+            .send("YYY");
     } else {
         const user_data = {
             "username": req.body.username, "email": req.body.email, "given_name": req.body.givenName,
@@ -43,7 +44,6 @@ exports.createUser = async function (req, res) {
         const family_name = user_data["family_name"].toString();
         const password = passwordHash.generate(user_data["password"].toString());
         const values = [[username, email, given_name, family_name, password]];
-
 
         /* Checks if password is empty or email doesn't contain an @ symbol*/
         if (password == "" || !email.includes("@")) {
