@@ -89,8 +89,7 @@ exports.getAllVenues = async function (searchParams, done) {
         }
     }
     if (!searchParams['startIndex'] && searchParams['count']) {
-        sqlStatement += `LIMIT ${searchParams['count']}`;
-        console.log(sqlStatement);
+        sqlStatement += ` LIMIT ${searchParams['count']}`;
     }
 
     db.getPool().query(sqlStatement, function (err, result) {
