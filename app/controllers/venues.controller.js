@@ -62,16 +62,17 @@ exports.createVenue = async function (req, res) {
             if (help.checkLatLong(req.body.latitude, req.body.longitude)) {
                 res.statusMessage = "Bad Request"
                 return res.status(400).send("Bad Request");
+            } else {
+                const check = await db.getPool().query('SELECT * FROM Venue WHERE venue_name = ?', req.body.venueName);
+                if (!check.length == 0) {
+                    res.statusMessage = "Bad Request";
+                    return res.status(400).send("Bad Request");
+                }
+                Venue.createVenue(token, req.body, function (statusCode, statusMessage, userId) {
+                    res.statusMessage = statusMessage;
+                    res.status(statusCode).json(userId);
+                });
             }
-            const check = await db.getPool().query('SELECT * FROM Venue WHERE venue_name = ?', req.body.venueName);
-            if (!check.length == 0) {
-                res.statusMessage = "Bad Request";
-                return res.status(400).send("Bad Request");
-            }
-            Venue.createVenue(token, req.body, function (statusCode, statusMessage, userId) {
-                res.statusMessage = statusMessage;
-                res.status(statusCode).json(userId);
-            });
         } else {
             res.statusMessage = "Bad Request";
             return res.status(400).send("Bad Request");

@@ -49,8 +49,9 @@ exports.getSingleUser = async function(userId, token, done) {
 
 /**
  * Create a new user in the database.
- * @param user
  * @returns {Promise<*>}
+ * @param userData
+ * @param done
  */
 exports.createUser = async function (userData, done) {
     const username = userData.username;
@@ -58,36 +59,35 @@ exports.createUser = async function (userData, done) {
     const givenName = userData.givenName;
     const familyName = userData.familyName;
     const password = userData.password;
+
     let re = /[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}/igm;
-    //console.log(username, email, givenName, familyName, password);
-    //console.log(!username || !(/^\s*$/.test(username)));
     if (!username || (/^\s*$/.test(username))) {
-        return done(400, "Bad Request", "Username");
+        return done(400, "Bad Request", "Bad Request");
     }
     if (!re.test(email)) {
-        return done(400, "Bad Request", "Email");
+        return done(400, "Bad Request", "Bad Request");
     }
     if (!givenName || (/^\s*$/.test(givenName))) {
-        return done(400, "Bad Request", "Given Name");
+        return done(400, "Bad Request", "Bad Request");
     }
     if (!familyName || (/^\s*$/.test(familyName))) {
-        return done(400, "Bad Request", "Family Name");
+        return done(400, "Bad Request", "Bad Request");
     }
     if (!password || (/^\s*$/.test(password))) {
-        return done(400, "Bad Request", "Password");
+        return done(400, "Bad Request", "Bad Request");
     }
-    //const values = [[username, email, givenName, familyName, password]];
+
     const checkUserSql = `SELECT * FROM User WHERE username = "${username}"`;
     db.getPool().query(checkUserSql, function(err, result) {
         if (result.length !== 0) {
-            return done(400, "Bad Request", "User already exists");
+            return done(400, "Bad Request", "Bad Request");
         }
         else {
             const hashPassword = passwordHash.generate(password);
             const addUserSql = `INSERT INTO User (username, email, given_name, family_name, password) VALUES ("${username}", "${email}", "${givenName}", "${familyName}", "${hashPassword}")`;
             db.getPool().query(addUserSql, function(err, result) {
                 if (err) return done(400, "Bad request", "Bad request");
-                const conditions = `SELECT user_id FROM User WHERE username = "${username}"`
+                const conditions = `SELECT user_id FROM User WHERE username = "${username}"`;
                 db.getPool().query(conditions, function(err, result) {
                     if (err) return done(400, "Bad request", "Bad request");
                     const userId = result[0].user_id;
@@ -97,17 +97,6 @@ exports.createUser = async function (userData, done) {
         }
     });
 };
-
-exports.checkUserExists = async function (user) {
-    let values = [user];
-    const result = await db.getPool().query('SELECT * FROM User WHERE username = ?', values.body.username);
-    if (result.length != 0) {
-        return (true);
-    } else {
-        return (false)
-    }
-};
-
 
 exports.updateUser = async function (token, givenId, userValues, done) {
     help.getUserIdFromToken(token, function(currentUser) {
@@ -119,56 +108,76 @@ exports.updateUser = async function (token, givenId, userValues, done) {
                 if(!(currentUser == givenId)) {
                     return done(403, "Forbidden", "Forbidden");
                 } else {
+                    let re = /[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}/igm;
                     // Checks all fields are not empty
                     for (const value in userValues) {
                         if (userValues[value].length === 0) {
-                            return done(400, "Bad Request", "Bad Request")
+                            return done(400, "Bad Request", "Bad Request");
                         }
                     }
                     let values = '';
                     let isEmpty = true;
                     if (userValues['username']) {
-                        if (!isEmpty) {
-                            values = values + ", ";
+                        if(typeof(userValues['username']) !== 'string') {
+                            return done(400, "Bad Request", "Bad Request");
+                        } else {
+                            if (!isEmpty) {
+                                values = values + ", ";
+                            }
+                            values = values + `username = "${userValues.username}"`;
+                            isEmpty = false;
                         }
-                        values = values + `username = "${userValues.username}"`;
-                        isEmpty = false;
+
                     }
                     if (userValues['givenName']) {
-                        if (!isEmpty) {
-                            values = values + ", ";
+                        if(typeof(userValues['givenName']) !== 'string') {
+                            return done(400, "Bad Request", "Bad Request");
+                        } else {
+                            if (!isEmpty) {
+                                values = values + ", ";
+                            }
+                            values = values + `given_name = "${userValues.givenName}"`;
+                            isEmpty = false;
                         }
-                        values = values + `given_name = "${userValues.givenName}"`;
-                        isEmpty = false;
+
                     }
                     if (userValues['familyName']) {
-                        if (!isEmpty) {
-                            values = values + ", ";
+                        if(typeof(userValues['familyName']) !== 'string') {
+                            return done(400, "Bad Request", "Bad Request");
+                        } else {
+                            if (!isEmpty) {
+                                values = values + ", ";
+                            }
+                            values = values + `family_name = "${userValues.familyName}"`;
+                            isEmpty = false;
                         }
-                        values = values + `family_name = "${userValues.familyName}"`;
-                        isEmpty = false;
 
                     }
                     if (userValues['email']) {
-                        //Check the email contains a '@' character
-                        if (!userValues['email'].includes("@")) {
+                        if(typeof(userValues['email']) !== 'string') {
                             return done(400, "Bad Request", "Bad Request");
+                        } else {
+                            //Check the email contains a '@' character
+                            if (!re.test(userValues['email'])) {
+                                return done(400, "Bad Request", "Bad Request");
+                            } else {
+                                if (!isEmpty) {
+                                    values = values + ", ";
+                                }
+                                values = values + `email = "${userValues.email}"`;
+                                isEmpty = false;
+                            }
                         }
-                        if (!isEmpty) {
-                            values = values + ", ";
-                        }
-                        values = values + `email = "${userValues.email}"`;
-                        isEmpty = false;
-
                     }
                     if (userValues['password']) {
-                        if(!typeof(userValues['password']) == 'string' || !isNaN(userValues['password'])) {
+                        if(typeof(userValues['password']) !== 'string') {
                             return done(400, "Bad Request", "Bad Request");
+                        } else {
+                            if (!isEmpty) {
+                                values = values + ", ";
+                            }
+                            values = values + `password = "${passwordHash.generate(userValues.password)}"`;
                         }
-                        if (!isEmpty) {
-                            values = values + ", ";
-                        }
-                        values = values + `password = "${passwordHash.generate(userValues.password)}"`;
                     }
                     const sql = `UPDATE User SET ${values} WHERE user_id = ${givenId}`;
                     db.getPool().query(sql, function(err, result) {

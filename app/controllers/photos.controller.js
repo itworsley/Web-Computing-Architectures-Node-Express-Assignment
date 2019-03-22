@@ -23,6 +23,9 @@ exports.addPhotoToUser = async function(req, res) {
     if (!req.header("X-Authorization")) {
         res.statusMessage = "Unauthorized";
         return res.status(401).send("Unauthorized");
+    } else if (req.body.length == 0) {
+        res.statusMessage = "Bad Request";
+        return res.status(400).send("Bad Request");
     } else {
         Photo.addPhotoToUser(token, userId, req, function (statusCode, statusMessage, result) {
             res.statusMessage = statusMessage;

@@ -15,7 +15,7 @@ exports.getUserIdFromToken = function(token, done) {
 };
 
 exports.checkLatLong = function(lat, long) {
-    if ((lat < -90) || (lat > 90) || (long < -180) || (long > 180)) {
+    if ((lat < -90) || (lat > 90) || (long < -180) || (long > 180) || isNaN(lat) || isNaN(long)) {
         return true
     } else {
         return false

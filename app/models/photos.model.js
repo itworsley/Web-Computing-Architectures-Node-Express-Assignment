@@ -56,8 +56,19 @@ exports.addPhotoToUser = async function (token, userId, request, done) {
                         } else {
                             const updatePhotoSql = `UPDATE User SET profile_photo_filename = "${newFileName}" WHERE user_id = ${userId}`;
                             db.getPool().query(updatePhotoSql, function(err, result) {
-                                if (err) return done(404, "Not Found", "Not Found");
-                                done(200, "OK", "OK");
+                                if (fileType ===".png") {
+                                    fs.unlink(`app/photos/users/user${userId}.jpeg`, function(err) {
+                                        if (err) return done(404, "Not Found", "Not Found");
+                                        done(200, "OK", "OK");
+                                    });
+                                }
+                                if (fileType === ".jpeg") {
+                                    fs.unlink(`app/photos/users/user${userId}.png`, function (err) {
+                                        if (err) return done(404, "Not Found", "Not Found");
+                                        done(200, "OK", "OK");
+                                    });
+
+                                }
                             });
                         }
                     });
@@ -203,19 +214,19 @@ exports.addPhotoToVenue = async function (token, venueId, req, done) {
                                 return done (400, "Bad Request", "Bad Request")
                             })
                             .on('end', function (name, field) {
-                                if (fields.length != 0) {
+                                if (fields.length !== 0) {
                                     const description = fields[0];
 
                                     const checkSql = `SELECT * FROM VenuePhoto WHERE venue_id = ${venueId} AND is_primary = 1`;
                                     db.getPool().query(checkSql, function (err, result) {
-                                        if (result.length == 0) {
+                                        if (result.length === 0) {
                                             const sqlQuery = `INSERT INTO VenuePhoto (venue_id, photo_filename, photo_description, is_primary) VALUES (${venueId}, "${newFileName}", "${description}", 1)`;
                                             db.getPool().query(sqlQuery, function (err) {
                                                 if (err) {return done(400, "Bad Request", "Bad Request");}
                                                 return done (201, "Created", "Created");
                                             });
                                         } else {
-                                            if(fields[1] == "true") {
+                                            if(fields[1] === "true") {
                                                 const updateSql = `UPDATE VenuePhoto SET is_primary = 0 WHERE venue_id = ${result[0].venue_id} AND photo_filename = "${result[0].photo_filename}"`;
                                                 db.getPool().query(updateSql, function (err) {
                                                     if (err) return done(400, "Bad Request", "Bad Request");
@@ -225,7 +236,7 @@ exports.addPhotoToVenue = async function (token, venueId, req, done) {
                                                         return done (201, "Created", "Created");
                                                     });
                                                 });
-                                            } else if (fields[1] == "false"){
+                                            } else if (fields[1] === "false"){
                                                 const sqlQuery = `INSERT INTO VenuePhoto (venue_id, photo_filename, photo_description, is_primary) VALUES (${venueId}, "${newFileName}", "${description}", 0)`;
                                                 db.getPool().query(sqlQuery, function (err) {
                                                     if (err) {return done(400, "Bad Request", "Bad Request");}
@@ -257,25 +268,27 @@ exports.getVenuePhoto = async function (venueId, fileName, done) {
             const sql = `SELECT photo_filename FROM VenuePhoto WHERE venue_id = "${venueId}" AND photo_filename = "${fileName}"`;
             db.getPool().query(sql, function(err, result) {
                 if (err) return done(404, "Not Found", "Not Found");
-                if (result[0].photo_filename == null) {
+                if (result[0] === undefined) {
                     return done(404, "Not Found", "Not Found");
-                }
-                let fileType = "";
-                if(result[0].photo_filename.includes("jpeg") || result[0].photo_filename.includes("jpg")) {
-                    fileType = "jpeg"
-                } else if (result[0].photo_filename.includes("png")) {
-                    fileType = "png"
                 } else {
-                    return done(404, "Not Found", "Not Found");
-                }
-                fs.readFile("app/photos/venues/" + result[0].photo_filename, function(err, data) {
-                    if (err) return done(404, "Not Found", "Not Found");
-                    if (data == null) {
-                        return done(404, "Not Found", "Not Found");
+                    let fileType = "";
+                    if(result[0].photo_filename.includes("jpeg") || result[0].photo_filename.includes("jpg")) {
+                        fileType = "jpeg"
+                    } else if (result[0].photo_filename.includes("png")) {
+                        fileType = "png"
                     } else {
-                        done(200, "OK", data, fileType);
+                        return done(404, "Not Found", "Not Found");
                     }
-                });
+                    fs.readFile("app/photos/venues/" + result[0].photo_filename, function(err, data) {
+                        if (err) return done(404, "Not Found", "Not Found");
+                        if (data == null) {
+                            return done(404, "Not Found", "Not Found");
+                        } else {
+                            done(200, "OK", data, fileType);
+                        }
+                    });
+                }
+
             });
         }
     });

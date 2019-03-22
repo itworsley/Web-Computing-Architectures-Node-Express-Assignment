@@ -7,36 +7,48 @@ exports.getAllVenues = async function (searchParams, done) {
         `Review.star_rating, Review.cost_rating, (SELECT VenuePhoto.photo_filename FROM VenuePhoto WHERE VenuePhoto.venue_id = Venue.venue_id AND VenuePhoto.is_primary = 1) AS primaryPhoto, ` +
         `(SELECT AVG(Review.star_rating) FROM Review WHERE Review.reviewed_venue_id = Venue.venue_id) AS meanStarRating,` +
         `(SELECT DISTINCT ModeCostRating.mode_cost_rating FROM ModeCostRating WHERE ModeCostRating.venue_id = Venue.venue_id ORDER BY ModeCostRating.mode_cost_rating DESC LIMIT 1) AS modeCostRating `;
-    if (searchParams['myLatitude'] || searchParams['myLongitude']) {
+    if (searchParams['myLatitude'] || searchParams['myLongitude'] || (/^\s*$/.test(searchParams['myLatitude'])) || (/^\s*$/.test(searchParams['myLongitude']))) {
         if(help.checkLatLong(searchParams['myLatitude'], searchParams['myLongitude'])) {
             return done(400, "Bad Request", "Bad Request");
         } else {
             sqlStart += ', Initial.distance';
-            sqlStatement1 += `, ROUND(111.111 *
+            sqlStatement1 += `, 111.111 *
              DEGREES(ACOS(LEAST(COS(RADIANS(Venue.latitude))
              * COS(RADIANS(${searchParams['myLatitude']}))
              * COS(RADIANS(Venue.longitude - ${searchParams['myLongitude']}))
              + SIN(RADIANS(Venue.latitude))
-             * SIN(RADIANS(${searchParams['myLatitude']})), 1.0))), 3) AS distance `
+             * SIN(RADIANS(${searchParams['myLatitude']})), 1.0))) AS distance `
         }
 
     }
     let sqlStatement2 = `FROM Venue LEFT JOIN Review ON Review.reviewed_venue_id = Venue.venue_id) AS Initial WHERE Initial.venue_name LIKE CONCAT("%%")`;
 
-    if (searchParams['city']) {
+    if (searchParams['city'] || (/^\s*$/.test(searchParams['city']))) {
+        if(searchParams['city'].length===0) {
+            return done(400, "Bad Request", "Bad Request");
+        }
         sqlStatement2 += ` AND Initial.city = "${searchParams['city']}"`;
     }
-    if (searchParams['q']) {
+    if (searchParams['q'] || (/^\s*$/.test(searchParams['q']))) {
+        if(searchParams['q'].length===0) {
+            return done(400, "Bad Request", "Bad Request");
+        }
         sqlStatement2 += ` AND Initial.venue_name LIKE CONCAT("%${searchParams['q']}%")`;
     }
-    if (searchParams['categoryId']) {
+    if (searchParams['categoryId'] || (/^\s*$/.test(searchParams['categoryId']))) {
+        if(searchParams['categoryId'].length===0) {
+            return done(400, "Bad Request", "Bad Request");
+        }
         if (isNaN(searchParams['categoryId'])) {
             return done(400, "Bad Request", "Bad Request");
         } else {
             sqlStatement2 += ` AND Initial.category_id = "${searchParams['categoryId']}"`;
         }
     }
-    if (searchParams['adminId']) {
+    if (searchParams['adminId'] || (/^\s*$/.test(searchParams['adminId']))) {
+        if(searchParams['adminId'].length===0) {
+            return done(400, "Bad Request", "Bad Request");
+        }
         if (isNaN(searchParams['adminId'])) {
             return done(400, "Bad Request", "Bad Request");
         } else {
@@ -44,7 +56,10 @@ exports.getAllVenues = async function (searchParams, done) {
         }
 
     }
-    if (searchParams['minStarRating']) {
+    if (searchParams['minStarRating'] || (/^\s*$/.test(searchParams['minStarRating']))) {
+        if(searchParams['minStarRating'].length===0) {
+            return done(400, "Bad Request", "Bad Request");
+        }
         if (searchParams['minStarRating'] >=1 && searchParams['minStarRating']<=5) {
             sqlStatement2 += ` AND Initial.meanStarRating >= "${searchParams['minStarRating']}"`;
         } else {
@@ -52,7 +67,10 @@ exports.getAllVenues = async function (searchParams, done) {
         }
 
     }
-    if (searchParams['maxCostRating']) {
+    if (searchParams['maxCostRating'] || (/^\s*$/.test(searchParams['maxCostRating']))) {
+        if(searchParams['maxCostRating'].length===0) {
+            return done(400, "Bad Request", "Bad Request");
+        }
         if (searchParams['maxCostRating'] >=0 && searchParams['maxCostRating']<=4) {
             sqlStatement2 += ` AND Initial.modeCostRating <= "${searchParams['maxCostRating']}"`;
         } else {
@@ -62,9 +80,12 @@ exports.getAllVenues = async function (searchParams, done) {
     }
     //console.log(searchParams['reverseSort'] === 'false');
     //console.log(typeof(searchParams['sortBy']));
-    if (searchParams['sortBy'] || (searchParams['sortBy'] !== undefined)) {
+    if (searchParams['sortBy'] || (/^\s*$/.test(searchParams['sortBy']))) {
         let order = 'ASC';
-        if (searchParams['reverseSort']) {
+        if (searchParams['reverseSort'] || (/^\s*$/.test(searchParams['reverseSort']))) {
+            if(searchParams['reverseSort'].length===0) {
+                return done(400, "Bad Request", "Bad Request");
+            }
             if (searchParams['reverseSort'] === 'true' || searchParams['reverseSort'] === 'false') {
                 if (searchParams['reverseSort'] === 'true') {
                     order = 'DESC';
@@ -97,7 +118,10 @@ exports.getAllVenues = async function (searchParams, done) {
     let sqlStatement = sqlStart + sqlStatement1 + sqlStatement2;
     if (searchParams['sortBy'] == undefined) {
         let order = 'DESC';
-        if (searchParams['reverseSort']) {
+        if (searchParams['reverseSort'] || (/^\s*$/.test(searchParams['reverseSort']))) {
+            if(searchParams['reverseSort'].length===0) {
+                return done(400, "Bad Request", "Bad Request");
+            }
             if (searchParams['reverseSort'] === 'true' || searchParams['reverseSort'] === 'false') {
                 if (searchParams['reverseSort'] === 'true') {
                     order = 'ASC';
@@ -189,22 +213,25 @@ exports.createVenue = async function (token, venueValues, done) {
                     mm='0'+mm;
                 }
                 dateAdded = yyyy + '-' + mm + '-' + dd;
-
-                let fields = 'admin_id, category_id, venue_name, city, short_description, long_description, date_added, address, latitude, longitude';
-                let values = `"${currentUser}", "${venueValues.categoryId}", "${venueValues.venueName}", "${venueValues.city}", "${venueValues.shortDescription}", "${venueValues.longDescription}",
+                if (typeof(venueValues.venueName) !== 'string' || typeof (venueValues.city) !== 'string' || typeof (venueValues.shortDescription) !== 'string' || typeof (venueValues.longDescription) !== 'string' || typeof (venueValues.address) !== 'string') {
+                    return done(400, "Bad Request", "Bad Request");
+                } else {
+                    let fields = 'admin_id, category_id, venue_name, city, short_description, long_description, date_added, address, latitude, longitude';
+                    let values = `"${currentUser}", "${venueValues.categoryId}", "${venueValues.venueName}", "${venueValues.city}", "${venueValues.shortDescription}", "${venueValues.longDescription}",
                           "${dateAdded}", "${venueValues.address}", "${venueValues.latitude}", "${venueValues.longitude}"`;
-                const sql = `INSERT INTO Venue (${fields}) VALUES (${values})`;
-                db.getPool().query(sql, function(err, result) {
-                    if (err) return done(400, "Bad request", "Bad request");
-                    const conditions = `admin_id = "${currentUser}" AND category_id = "${venueValues.categoryId}" AND venue_name = "${venueValues.venueName}" AND ` +
-                        `city = "${venueValues.city}" AND short_description = "${venueValues.shortDescription}" AND long_description = "${venueValues.longDescription}" AND date_added = "${dateAdded}" ` +
-                        `AND address = "${venueValues.address}" AND latitude = "${venueValues.latitude}" AND longitude = "${venueValues.longitude}"`;
-                    const auctionSql = `SELECT MAX(venue_id) AS venue_id FROM Venue WHERE ${conditions}`;
-                    db.getPool().query(auctionSql, function (err, result) {
-                        if (err || result.length === 0) return done(500, "Internal server error", "Internal server error");
-                        done(201, "OK", {"venueId": result[0].venue_id});
+                    const sql = `INSERT INTO Venue (${fields}) VALUES (${values})`;
+                    db.getPool().query(sql, function(err, result) {
+                        if (err) return done(400, "Bad request", "Bad request");
+                        const conditions = `admin_id = "${currentUser}" AND category_id = "${venueValues.categoryId}" AND venue_name = "${venueValues.venueName}" AND ` +
+                            `city = "${venueValues.city}" AND short_description = "${venueValues.shortDescription}" AND long_description = "${venueValues.longDescription}" AND date_added = "${dateAdded}" ` +
+                            `AND address = "${venueValues.address}" AND latitude = "${venueValues.latitude}" AND longitude = "${venueValues.longitude}"`;
+                        const auctionSql = `SELECT MAX(venue_id) AS venue_id FROM Venue WHERE ${conditions}`;
+                        db.getPool().query(auctionSql, function (err, result) {
+                            if (err || result.length === 0) return done(500, "Internal server error", "Internal server error");
+                            done(201, "OK", {"venueId": result[0].venue_id});
+                        });
                     });
-                });
+                }
             }
         });
     });
@@ -236,7 +263,7 @@ exports.updateVenue = function (token, venueId, venueValues, done) {
                         let values = '';
                         let isEmpty = true;
                         if (venueName || (/^\s*$/.test(venueName))) {
-                            if(/^\s*$/.test(venueName)) {
+                            if(typeof(venueName) !== 'string') {
                                 return done(400, "Bad Request", "Bad Request")
                             } else {
                                 if (!isEmpty) {
@@ -247,15 +274,20 @@ exports.updateVenue = function (token, venueId, venueValues, done) {
                             }
 
                         }
-                        if (categoryId) {
-                            if (!isEmpty) {
-                                values = values + ", ";
+                        if (categoryId || (/^\s*$/.test(categoryId))) {
+                            if(isNaN(categoryId)) {
+                                return done(400, "Bad Request", "Bad Request")
+                            } else {
+                                if (!isEmpty) {
+                                    values = values + ", ";
+                                }
+                                values = values + `category_id = "${categoryId}"`;
+                                isEmpty = false;
                             }
-                            values = values + `category_id = "${categoryId}"`;
-                            isEmpty = false;
+
                         }
                         if (city || (/^\s*$/.test(city))) {
-                            if(/^\s*$/.test(city)) {
+                            if(typeof(city) !== 'string') {
                                 return done(400, "Bad Request", "Bad Request")
                             } else {
                                 if (!isEmpty) {
@@ -266,7 +298,7 @@ exports.updateVenue = function (token, venueId, venueValues, done) {
                             }
                         }
                         if (shortDescription || (/^\s*$/.test(shortDescription))) {
-                            if(/^\s*$/.test(shortDescription)) {
+                            if(typeof(shortDescription) !== 'string') {
                                 return done(400, "Bad Request", "Bad Request")
                             } else {
                                 if (!isEmpty) {
@@ -277,7 +309,7 @@ exports.updateVenue = function (token, venueId, venueValues, done) {
                             }
                         }
                         if (longDescription || (/^\s*$/.test(longDescription))) {
-                            if(/^\s*$/.test(longDescription)) {
+                            if(typeof(longDescription) !== 'string') {
                                 return done(400, "Bad Request", "Bad Request")
                             } else {
                                 if (!isEmpty) {
@@ -288,7 +320,7 @@ exports.updateVenue = function (token, venueId, venueValues, done) {
                             }
                         }
                         if (address || (/^\s*$/.test(address))) {
-                            if(/^\s*$/.test(address)) {
+                            if(typeof(address) !== 'string') {
                                 return done(400, "Bad Request", "Bad Request")
                             } else {
                                 if (!isEmpty) {
@@ -299,6 +331,9 @@ exports.updateVenue = function (token, venueId, venueValues, done) {
                             }
                         }
                         if ((venueValues['latitude']) || (venueValues['latitude'] == 0)) {
+                            if(isNaN(venueValues['latitude'])) {
+                                return done(400, "Bad Request", "Bad Request")
+                            }
                             if((venueValues['latitude']) < -90 || (venueValues['latitude']) > 90) {
                                 return done(400, "Bad Request", "Bad Request")
                             } else {
@@ -311,6 +346,9 @@ exports.updateVenue = function (token, venueId, venueValues, done) {
 
                         }
                         if (venueValues['longitude'] || (venueValues['longitude'] == 0)) {
+                            if(isNaN(venueValues['longitude'])) {
+                                return done(400, "Bad Request", "Bad Request")
+                            }
                             if (venueValues['longitude'] < -180 || venueValues['longitude'] > 180) {
                                 return done(400, "Bad Request", "Bad Request")
                             } else {
