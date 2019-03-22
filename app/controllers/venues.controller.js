@@ -8,21 +8,6 @@ const help = require('../lib/helpers');
  * @param res
  * @returns {Promise<void>}
  */
-// exports.getAllVenues = async function (req, res) {
-//     const sqlCommand = String(req.body);
-//     try {
-//         const results = await Venue.getAllVenues(sqlCommand);
-//         res.statusMessage = 'OK';
-//         res.status(200)
-//             .json(results);
-//     } catch (err) {
-//         if (!err.hasBeenLogged) console.error(err);
-//         res.statusMessage = 'Internal Server Error';
-//         res.status(500)
-//             .send();
-//     }
-// };
-
 exports.getAllVenues = function (req, res) {
     let searchParams = req.query;
     Venue.getAllVenues(searchParams, function(statusCode, statusMessage, result)  {

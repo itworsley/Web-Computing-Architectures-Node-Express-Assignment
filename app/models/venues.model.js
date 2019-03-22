@@ -78,8 +78,6 @@ exports.getAllVenues = async function (searchParams, done) {
         }
 
     }
-    //console.log(searchParams['reverseSort'] === 'false');
-    //console.log(typeof(searchParams['sortBy']));
     if (searchParams['sortBy'] || (/^\s*$/.test(searchParams['sortBy']))) {
         let order = 'ASC';
         if (searchParams['reverseSort'] || (/^\s*$/.test(searchParams['reverseSort']))) {

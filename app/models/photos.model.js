@@ -55,18 +55,26 @@ exports.addPhotoToUser = async function (token, userId, request, done) {
                             });
                         } else {
                             const updatePhotoSql = `UPDATE User SET profile_photo_filename = "${newFileName}" WHERE user_id = ${userId}`;
-                            db.getPool().query(updatePhotoSql, function(err, result) {
+                            db.getPool().query(updatePhotoSql, function(err, resx) {
                                 if (fileType ===".png") {
-                                    fs.unlink(`app/photos/users/user${userId}.jpeg`, function(err) {
-                                        if (err) return done(404, "Not Found", "Not Found");
+                                    if (result[0].profile_photo_filename.includes(".jpeg")) {
+                                        fs.unlink(`app/photos/users/user${userId}.jpeg`, function(err) {
+                                            if (err) return done(404, "Not Found", "XXX");
+                                            done(200, "OK", "OK");
+                                        });
+                                    } else {
                                         done(200, "OK", "OK");
-                                    });
+                                    }
                                 }
                                 if (fileType === ".jpeg") {
-                                    fs.unlink(`app/photos/users/user${userId}.png`, function (err) {
-                                        if (err) return done(404, "Not Found", "Not Found");
+                                    if (result[0].profile_photo_filename.includes(".png")) {
+                                        fs.unlink(`app/photos/users/user${userId}.png`, function(err) {
+                                            if (err) return done(404, "Not Found", "XXY");
+                                            done(200, "OK", "OK");
+                                        });
+                                    } else {
                                         done(200, "OK", "OK");
-                                    });
+                                    }
 
                                 }
                             });
@@ -85,7 +93,6 @@ exports.getUserPhoto = async function (userId, request, done) {
     const checkUserSql = `SELECT * From User WHERE user_id = "${userId}"`;
     db.getPool().query(checkUserSql, function(err, result) {
         if (result.length == 0) {
-            console.log("HEREB");
             return done(404, "Not Found", "Not Found");
         } else {
             const sql = `SELECT profile_photo_filename FROM User WHERE user_id = "${userId}"`;

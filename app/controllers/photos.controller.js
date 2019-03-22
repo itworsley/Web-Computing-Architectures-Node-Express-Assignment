@@ -1,6 +1,4 @@
 const Photo = require('../models/photos.model');
-const fs = require("fs");
-const formidable = require('formidable');
 
 
 exports.addPhotoToVenue = async function(req, res) {
