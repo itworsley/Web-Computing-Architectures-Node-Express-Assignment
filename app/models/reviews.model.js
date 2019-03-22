@@ -79,9 +79,9 @@ exports.createReview = async function (token, venueId, reviewValues, done) {
                     const checkVenueExists = `SELECT * FROM Venue WHERE venue_id = ${venueId}`;
                     db.getPool().query(checkVenueExists, function(err, result) {
                         if (err) return done(404, "Not Found", "Not Found");
-                        if(result.length === 0) return done(404, "Not Found", "Not Found")
+                        if(result.length === 0) return done(404, "Not Found", "Not Found");
                         else {
-                            const checkVenueAdmin = `SELECT admin_id FROM Venue WHERE venue_id = ${venueId}`
+                            const checkVenueAdmin = `SELECT admin_id FROM Venue WHERE venue_id = ${venueId}`;
                             db.getPool().query(checkVenueAdmin, function(err, result) {
                                 if((currentUser === result[0].admin_id)) {
                                     return done(403, "Forbidden", "Forbidden");
@@ -114,7 +114,7 @@ exports.createReview = async function (token, venueId, reviewValues, done) {
                                             timePosted = yyyy + '-' + mm + '-' + dd + " " + hh + ":" + min + ":" + ss;
 
                                             let fields = 'reviewed_venue_id, review_author_id, review_body, star_rating, cost_rating, time_posted';
-                                            let values = `"${venueId}", "${currentUser}", "${reviewValues.reviewBody}", "${reviewValues.starRating}", "${reviewValues.costRating}", "${timePosted}"`
+                                            let values = `"${venueId}", "${currentUser}", "${reviewValues.body.reviewBody}", "${reviewValues.body.starRating}", "${reviewValues.body.costRating}", "${timePosted}"`
                                             const sql = `INSERT INTO Review (${fields}) VALUES (${values})`;
                                             db.getPool().query(sql, function(err, result) {
                                                 if(err) {
