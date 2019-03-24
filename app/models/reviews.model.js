@@ -3,7 +3,7 @@ const help = require('../lib/helpers');
 
 exports.getAllReviews = async function(venueId) {
     try {
-        const sqlStatement = `SELECT User.user_id, User.username, Review.review_body, Review.star_rating, Review.cost_rating, Review.time_posted FROM Review LEFT JOIN User ON (Review.review_author_id = User.user_id) WHERE reviewed_venue_id = ${venueId}`
+        const sqlStatement = `SELECT User.user_id, User.username, Review.review_body, Review.star_rating, Review.cost_rating, Review.time_posted FROM Review LEFT JOIN User ON (Review.review_author_id = User.user_id) WHERE reviewed_venue_id = ${venueId} ORDER BY Review.time_posted DESC`;
         return await db.getPool().query(sqlStatement);
     } catch (err) {
         console.log(err);
@@ -19,7 +19,7 @@ exports.getUserReviews = async function (userId, token, done) {
             if (!isAuthorised) {
                 return done(401, "Unauthorized", "Unauthorized");
             }
-            const sqlStatement = `SELECT User.user_id, User.username, Review.review_body, Review.star_rating, Review.cost_rating, Review.time_posted, Venue.venue_id, Venue.venue_name, VenueCategory.category_name, Venue.city, Venue.short_description, VenuePhoto.photo_filename FROM Review LEFT JOIN User ON (Review.review_author_id = User.user_id) LEFT JOIN Venue ON (Review.reviewed_venue_id = Venue.venue_id) LEFT JOIN VenueCategory ON (Venue.category_id = VenueCategory.category_id) LEFT JOIN VenuePhoto ON (Venue.venue_id = VenuePhoto.venue_id) WHERE User.user_id = ${userId}`;
+            const sqlStatement = `SELECT User.user_id, User.username, Review.review_body, Review.star_rating, Review.cost_rating, Review.time_posted, Venue.venue_id, Venue.venue_name, VenueCategory.category_name, Venue.city, Venue.short_description, VenuePhoto.photo_filename FROM Review LEFT JOIN User ON (Review.review_author_id = User.user_id) LEFT JOIN Venue ON (Review.reviewed_venue_id = Venue.venue_id) LEFT JOIN VenueCategory ON (Venue.category_id = VenueCategory.category_id) LEFT JOIN VenuePhoto ON (Venue.venue_id = VenuePhoto.venue_id) WHERE User.user_id = ${userId} ORDER BY Review.time_posted DESC`;
             db.getPool().query(sqlStatement, function (err, result) {
                 if (err) return done(500, "Internal server error", "Internal server error");
                 if (result.length === 0) done(404, "Not Found", "Not Found");

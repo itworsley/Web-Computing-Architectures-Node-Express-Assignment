@@ -197,9 +197,10 @@ exports.addPhotoToVenue = async function (token, venueId, req, done) {
                                 const imageType = file.type;
                                 const temp_path = file.path;
                                 let type = "";
-                                if (imageType == "image/png") {
+                                console.log(imageType);
+                                if (imageType === "image/png") {
                                     type = '.png'
-                                } else if (imageType == "image/jpeg") {
+                                } else if (imageType === "image/jpeg") {
                                     type = '.jpeg'
                                 } else {
                                     return done(400, "Bad Request", "Bad Request");
